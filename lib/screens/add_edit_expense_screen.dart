@@ -1,4 +1,4 @@
-import 'package:expense/models/categories.dart';
+import 'package:expense/models/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/models/payment_type.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';
@@ -18,9 +18,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   late GlobalKey<FormState> _formKey;
   late Map<String, dynamic> _data;
   late List<Widget> _paymentMethodWidgets;
-  late Categories _category;
+  late CategoryEncapsulator _categoryEncapsulator;
   late List<Widget> _categoryWidgets;
   late bool _isEditing;
+  late Future _initialFuture;
   final _uuid = const Uuid();
   final String _amountKey = "amt";
   final String _descriptionKey = "des";
@@ -37,13 +38,14 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         _descriptionKey, () => _isEditing ? widget.expense!.description : "");
     _data.putIfAbsent(
         _amountKey, () => _isEditing ? widget.expense!.amount : 0);
-    _category = context.read<ExpenseViewModel>().getCategories();
-
+    _categoryEncapsulator =
+        context.read<ExpenseViewModel>().getCategoryEncapsulator();
     if (_isEditing) {
-      _category.chooseCategory(widget.expense!.category);
+      _categoryEncapsulator.chooseCategory(
+          _categoryEncapsulator.getCategoryFromId(widget.expense!.categoryId));
       PaymentTypes.choosePaymentType(widget.expense!.paymentType);
     } else {
-      _category.setDefaultCategory();
+      _categoryEncapsulator.setDefaultCategory();
       PaymentTypes.setDefaultPaymentType();
     }
 
@@ -78,22 +80,24 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
 
   void _setCategoryWidgets() {
     _categoryWidgets = [];
-    for (var element in _category.getCategoryList()) {
+    for (var element in _categoryEncapsulator.getCategoryList()) {
       _categoryWidgets.add(ElevatedButton(
           onPressed: () {
-            _category.chooseCategory(element);
+            _categoryEncapsulator.chooseCategory(element);
             setState(() {
               _setCategoryWidgets();
             });
           },
-          child: Text(element),
+          child: Text(element.name),
           style: ButtonStyle(
-              foregroundColor: _category.getChosenCategory() == element
-                  ? _foregroundColor
-                  : _backgroundColor,
-              backgroundColor: _category.getChosenCategory() == element
-                  ? _backgroundColor
-                  : _foregroundColor,
+              foregroundColor:
+                  _categoryEncapsulator.getChosenCategory() == element
+                      ? _foregroundColor
+                      : _backgroundColor,
+              backgroundColor:
+                  _categoryEncapsulator.getChosenCategory() == element
+                      ? _backgroundColor
+                      : _foregroundColor,
               shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                   RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
@@ -117,8 +121,13 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               : _data[_descriptionKey],
           paymentType: PaymentTypes.getChosenPaymentType(),
           time: widget.expense!.time,
-          category: _category.getChosenCategory());
-      await context.read<ExpenseViewModel>().editExpense(obj);
+          categoryId: _categoryEncapsulator.getChosenCategory().id);
+      await context.read<ExpenseViewModel>().editExpense(
+          oldExpense: widget.expense!,
+          newExpense: obj,
+          oldCategory: _categoryEncapsulator
+              .getCategoryFromId(widget.expense!.categoryId),
+          newCategory: _categoryEncapsulator.getChosenCategory());
     } else {
       obj = Expense(
           id: _uuid.v1(),
@@ -128,8 +137,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               : _data[_descriptionKey],
           paymentType: PaymentTypes.getChosenPaymentType(),
           time: DateTime.now(),
-          category: _category.getChosenCategory());
-      context.read<ExpenseViewModel>().addExpense(obj);
+          categoryId: _categoryEncapsulator.getChosenCategory().id);
+      context
+          .read<ExpenseViewModel>()
+          .addExpense(obj, _categoryEncapsulator.getChosenCategory());
     }
 
     Navigator.pop(context);
@@ -138,7 +149,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   @override
   void dispose() {
     super.dispose();
-    _category.setDefaultCategory();
+    _categoryEncapsulator.setDefaultCategory();
     PaymentTypes.setDefaultPaymentType();
   }
 

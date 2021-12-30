@@ -18,10 +18,6 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late int _bottomNavIndex;
-  final List<Widget> _widgetList = [
-    const ExpenseGridViewScreen(),
-    const ChartScreen()
-  ];
   static const String _editCategoryOptionString = "Edit Categories";
   static const String _deleteAllDataOptionString = "Delete All Data";
 
@@ -29,6 +25,15 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     _bottomNavIndex = 0;
     super.initState();
+  }
+
+  List<Widget> getDisplayWidget(ScrollController scrollController) {
+    return [
+      ExpenseGridViewScreen(scrollController: scrollController),
+      ChartScreen(
+        scrollController: scrollController,
+      )
+    ];
   }
 
   Future<bool> showConfirmActionDialog() async {
@@ -88,6 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(widget.title),
         actions: <Widget>[
@@ -115,33 +121,49 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: _widgetList[_bottomNavIndex],
-      bottomNavigationBar: AnimatedBottomNavigationBar(
-        icons: const [
-          Icons.home,
-          Icons.pie_chart,
-        ],
-        inactiveColor: Colors.grey,
-        activeIndex: _bottomNavIndex,
-        gapLocation: GapLocation.center,
-        notchSmoothness: NotchSmoothness.verySmoothEdge,
-        leftCornerRadius: 32,
-        rightCornerRadius: 32,
-        onTap: (index) => setState(() {
-          _bottomNavIndex = index;
-        }),
-        //other params
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,
-        onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => const AddEditExpenseScreen())),
-        tooltip: 'Add Expense',
-        child: const Icon(Icons.add, color: Colors.black),
-      ),
+      body: Stack(children: [
+        Consumer<ExpenseViewModel>(
+          builder: (ctx, model, _) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              "\u{20B9}${model.getTotalExpenditure()}",
+              style: const TextStyle(fontSize: 40, color: Colors.white),
+            ),
+          ),
+        ),
+        DraggableScrollableSheet(
+          initialChildSize: 0.8,
+          minChildSize: 0.7,
+          builder: (context, controller) =>
+              getDisplayWidget(controller)[_bottomNavIndex],
+        ),
+      ]),
+      // bottomNavigationBar: AnimatedBottomNavigationBar(
+      //   icons: const [
+      //     Icons.home,
+      //     Icons.pie_chart,
+      //   ],
+      //   inactiveColor: Colors.grey,
+      //   activeIndex: _bottomNavIndex,
+      //   gapLocation: GapLocation.center,
+      //   notchSmoothness: NotchSmoothness.verySmoothEdge,
+      //   leftCornerRadius: 32,
+      //   rightCornerRadius: 32,
+      //   onTap: (index) => setState(() {
+      //     _bottomNavIndex = index;
+      //   }),
+      //   //other params
+      // ),
+      // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      // floatingActionButton: FloatingActionButton(
+      //   backgroundColor: Colors.white,
+      //   onPressed: () => Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //           builder: (context) => const AddEditExpenseScreen())),
+      //   tooltip: 'Add Expense',
+      //   child: const Icon(Icons.add, color: Colors.black),
+      // ),
     );
   }
 }

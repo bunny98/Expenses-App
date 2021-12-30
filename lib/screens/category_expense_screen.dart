@@ -1,3 +1,4 @@
+import 'package:expense/models/category.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +11,7 @@ import 'add_edit_expense_screen.dart';
 class CategoryExpenseScreen extends StatefulWidget {
   const CategoryExpenseScreen({Key? key, required this.category})
       : super(key: key);
-  final String category;
+  final Category category;
 
   @override
   _CategoryExpenseScreenState createState() => _CategoryExpenseScreenState();
@@ -24,7 +25,10 @@ class _CategoryExpenseScreenState extends State<CategoryExpenseScreen> {
         // A SlidableAction can have an icon and/or a label.
         SlidableAction(
           onPressed: (_) {
-            context.read<ExpenseViewModel>().removeExpense(expense);
+            var _categoryEncap =
+                context.read<ExpenseViewModel>().getCategoryEncapsulator();
+            context.read<ExpenseViewModel>().removeExpense(
+                expense, _categoryEncap.getCategoryFromId(expense.categoryId));
             setState(() {});
           },
           backgroundColor: const Color(0xFFFE4A49),
@@ -52,11 +56,10 @@ class _CategoryExpenseScreenState extends State<CategoryExpenseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("${widget.category} Expenses"),
+        title: Text("${widget.category.name} Expenses"),
       ),
       body: Consumer<ExpenseViewModel>(builder: (context, model, _) {
-        List<Expense> _expenses =
-            model.getExpensesForCategory(widget.category) ?? [];
+        List<Expense> _expenses = model.getExpensesForCategory(widget.category);
         return _expenses.isEmpty
             ? const Center(
                 child: Text("No expenses"),
