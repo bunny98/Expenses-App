@@ -1,4 +1,5 @@
 import 'package:expense/screens/splash_screen.dart';
+import 'package:expense/utils/my_scroll_behaviour.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,6 +44,10 @@ class MyApp extends StatelessWidget {
             900: Color(0xFF000000),
           },
         ),
+      ),
+      builder: (context, child) => ScrollConfiguration(
+        behavior: MyBehavior(),
+        child: child!,
       ),
       home: SplashScreen(),
     );

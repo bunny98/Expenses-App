@@ -13,7 +13,8 @@ class ExpenseGridViewScreen extends StatefulWidget {
   _ExpenseGridViewScreenState createState() => _ExpenseGridViewScreenState();
 }
 
-class _ExpenseGridViewScreenState extends State<ExpenseGridViewScreen> {
+class _ExpenseGridViewScreenState extends State<ExpenseGridViewScreen>
+    with AutomaticKeepAliveClientMixin {
   final _textStyle = const TextStyle(color: Colors.white);
 
   @override
@@ -24,66 +25,55 @@ class _ExpenseGridViewScreenState extends State<ExpenseGridViewScreen> {
   @override
   Widget build(BuildContext context) {
     return Consumer<ExpenseViewModel>(
-      builder: (context, model, _) => Container(
-        decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.all(Radius.circular(40))),
-        child: CustomScrollView(
-          controller: widget.scrollController,
-          slivers: [
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 20),
-                child: Text(
-                  "Categories",
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
+      builder: (context, model, _) => CustomScrollView(
+        controller: widget.scrollController,
+        slivers: [
+          SliverGrid(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 200.0,
+                mainAxisSpacing: 5.0,
+                crossAxisSpacing: 5.0,
+                childAspectRatio: 4.0,
+                mainAxisExtent: 150),
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
+                return Card(
+                  elevation: 15,
+                  color: Colors.black87,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (ctx) => CategoryExpenseScreen(
+                                  category: model.getAllCategories()[index])));
+                    },
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Text(
+                            model.getAllCategories()[index].name,
+                            style: _textStyle,
+                          ),
+                          Text(
+                            "\u{20B9} ${model.getAllCategories()[index].totalExpense}",
+                            style: _textStyle,
+                          ),
+                        ]),
+                  ),
+                );
+              },
+              childCount: model.getAllCategories().length,
             ),
-            SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 200.0,
-                  mainAxisSpacing: 5.0,
-                  crossAxisSpacing: 5.0,
-                  childAspectRatio: 4.0,
-                  mainAxisExtent: 150),
-              delegate: SliverChildBuilderDelegate(
-                (BuildContext context, int index) {
-                  return Card(
-                    elevation: 15,
-                    color: Colors.black87,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (ctx) => CategoryExpenseScreen(
-                                    category:
-                                        model.getAllCategories()[index])));
-                      },
-                      child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Text(
-                              model.getAllCategories()[index].name,
-                              style: _textStyle,
-                            ),
-                            Text(
-                              "\u{20B9} ${model.getAllCategories()[index].totalExpense}",
-                              style: _textStyle,
-                            ),
-                          ]),
-                    ),
-                  );
-                },
-                childCount: model.getAllCategories().length,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }

@@ -75,6 +75,8 @@ class SQLStorage implements Storage {
     await dbInstance.execute(
       'DROP TABLE ${SQLTableNames.CATEGORY_TABLE}',
     );
+    await createCategoryTable(db: dbInstance);
+    await createExpensesTable(db: dbInstance);
   }
 
   @override
@@ -96,16 +98,10 @@ class SQLStorage implements Storage {
       return;
     }
     //Reduce total amount in old Category by old Expense amount
-    debugPrint(Category.reduceAmountBy(oldCategory, oldExpense.amount)
-        .toMap()
-        .toString());
     await dbInstance.update(SQLTableNames.CATEGORY_TABLE,
         Category.reduceAmountBy(oldCategory, oldExpense.amount).toMap(),
         where: oldCategory.getPrimaryKeySearchCondition());
     //Increase total amount in new Category by new Expense amount
-    debugPrint(Category.increaseAmountBy(newCategory, newExpense.amount)
-        .toMap()
-        .toString());
     await dbInstance.update(SQLTableNames.CATEGORY_TABLE,
         Category.increaseAmountBy(newCategory, newExpense.amount).toMap(),
         where: newCategory.getPrimaryKeySearchCondition());

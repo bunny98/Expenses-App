@@ -92,78 +92,181 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: <Widget>[
-          PopupMenuButton<String>(
-            onSelected: _handleClick,
-            itemBuilder: (BuildContext context) {
-              return {_editCategoryOptionString, _deleteAllDataOptionString}
-                  .map((String choice) {
-                return PopupMenuItem<String>(
-                  value: choice,
-                  child: Row(children: [
-                    Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 0, 2, 0),
-                        child: choice == _editCategoryOptionString
-                            ? const Icon(
-                                Icons.edit,
-                                color: Colors.black,
-                              )
-                            : const Icon(Icons.delete, color: Colors.black)),
-                    Text(choice)
-                  ]),
-                );
-              }).toList();
-            },
+    return DefaultTabController(
+      length: 2,
+      initialIndex: 0,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: Text(widget.title),
+          actions: <Widget>[
+            PopupMenuButton<String>(
+              onSelected: _handleClick,
+              itemBuilder: (BuildContext context) {
+                return {_editCategoryOptionString, _deleteAllDataOptionString}
+                    .map((String choice) {
+                  return PopupMenuItem<String>(
+                    value: choice,
+                    child: Row(children: [
+                      Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 0, 2, 0),
+                          child: choice == _editCategoryOptionString
+                              ? const Icon(
+                                  Icons.edit,
+                                  color: Colors.black,
+                                )
+                              : const Icon(Icons.delete, color: Colors.black)),
+                      Text(choice)
+                    ]),
+                  );
+                }).toList();
+              },
+            ),
+          ],
+        ),
+        body: Stack(children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5),
+            child: Column(children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Expanded(
+                  child: Consumer<ExpenseViewModel>(
+                    builder: (ctx, model, _) => Text(
+                      "\u{20B9}${model.getTotalExpenditure()}",
+                      overflow: TextOverflow.fade,
+                      style: const TextStyle(fontSize: 40, color: Colors.white),
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: const Icon(
+                    Icons.qr_code,
+                    color: Colors.black,
+                  ),
+                  style: ButtonStyle(
+                    shape: MaterialStateProperty.all(CircleBorder()),
+                    padding: MaterialStateProperty.all(EdgeInsets.all(10)),
+                    backgroundColor: MaterialStateProperty.all(
+                        Colors.white), // <-- Button color
+                    overlayColor:
+                        MaterialStateProperty.resolveWith<Color?>((states) {
+                      if (states.contains(MaterialState.pressed))
+                        return Colors.grey; // <-- Splash color
+                    }),
+                  ),
+                )
+              ]),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                          onPressed: () {},
+                          child: const Text(
+                            "Sync with messages",
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          style: ButtonStyle(
+                              shape: MaterialStateProperty.all<
+                                      RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18.0),
+                                      side: const BorderSide(
+                                          color: Colors.white))))),
+                      ElevatedButton(
+                        onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const AddEditExpenseScreen())),
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.black,
+                        ),
+                        style: ButtonStyle(
+                          shape: MaterialStateProperty.all(CircleBorder()),
+                          padding:
+                              MaterialStateProperty.all(EdgeInsets.all(10)),
+                          backgroundColor: MaterialStateProperty.all(
+                              Colors.white), // <-- Button color
+                          overlayColor:
+                              MaterialStateProperty.resolveWith<Color?>(
+                                  (states) {
+                            if (states.contains(MaterialState.pressed)) {
+                              return Colors.grey;
+                            } // <-- Splash color
+                          }),
+                        ),
+                      )
+                    ]),
+              ),
+            ]),
           ),
-        ],
-      ),
-      body: Stack(children: [
-        Consumer<ExpenseViewModel>(
-          builder: (ctx, model, _) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Text(
-              "\u{20B9}${model.getTotalExpenditure()}",
-              style: const TextStyle(fontSize: 40, color: Colors.white),
+          DraggableScrollableSheet(
+            initialChildSize: 0.8,
+            minChildSize: 0.8,
+            builder: (context, controller) => Container(
+              padding: const EdgeInsets.all(10),
+              decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.all(Radius.circular(40))),
+              child: Column(
+                children: [
+                  const TabBar(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                      labelColor: Colors.black,
+                      indicatorColor: Colors.grey,
+                      indicatorWeight: 3,
+                      unselectedLabelColor: Colors.grey,
+                      tabs: [
+                        Tab(
+                          child: Icon(
+                            Icons.list_alt_rounded,
+                          ),
+                        ),
+                        Tab(
+                          child: Icon(Icons.pie_chart_outline_rounded),
+                        )
+                      ]),
+                  const SizedBox(height: 10),
+                  Expanded(
+                      child:
+                          TabBarView(children: getDisplayWidget(controller))),
+                ],
+              ),
             ),
           ),
-        ),
-        DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          minChildSize: 0.7,
-          builder: (context, controller) =>
-              getDisplayWidget(controller)[_bottomNavIndex],
-        ),
-      ]),
-      // bottomNavigationBar: AnimatedBottomNavigationBar(
-      //   icons: const [
-      //     Icons.home,
-      //     Icons.pie_chart,
-      //   ],
-      //   inactiveColor: Colors.grey,
-      //   activeIndex: _bottomNavIndex,
-      //   gapLocation: GapLocation.center,
-      //   notchSmoothness: NotchSmoothness.verySmoothEdge,
-      //   leftCornerRadius: 32,
-      //   rightCornerRadius: 32,
-      //   onTap: (index) => setState(() {
-      //     _bottomNavIndex = index;
-      //   }),
-      //   //other params
-      // ),
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      // floatingActionButton: FloatingActionButton(
-      //   backgroundColor: Colors.white,
-      //   onPressed: () => Navigator.push(
-      //       context,
-      //       MaterialPageRoute(
-      //           builder: (context) => const AddEditExpenseScreen())),
-      //   tooltip: 'Add Expense',
-      //   child: const Icon(Icons.add, color: Colors.black),
-      // ),
+        ]),
+        // bottomNavigationBar: AnimatedBottomNavigationBar(
+        //   icons: const [
+        //     Icons.home,
+        //     Icons.pie_chart,
+        //   ],
+        //   inactiveColor: Colors.grey,
+        //   activeIndex: _bottomNavIndex,
+        //   gapLocation: GapLocation.center,
+        //   notchSmoothness: NotchSmoothness.verySmoothEdge,
+        //   leftCornerRadius: 32,
+        //   rightCornerRadius: 32,
+        //   onTap: (index) => setState(() {
+        //     _bottomNavIndex = index;
+        //   }),
+        //   //other params
+        // ),
+        // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        // floatingActionButton: FloatingActionButton(
+        //   backgroundColor: Colors.white,
+        //   onPressed: () => Navigator.push(
+        //       context,
+        //       MaterialPageRoute(
+        //           builder: (context) => const AddEditExpenseScreen())),
+        //   tooltip: 'Add Expense',
+        //   child: const Icon(Icons.add, color: Colors.black),
+        // ),
+      ),
     );
   }
 }

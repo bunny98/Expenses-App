@@ -15,7 +15,8 @@ class ChartScreen extends StatefulWidget {
   _ChartScreenState createState() => _ChartScreenState();
 }
 
-class _ChartScreenState extends State<ChartScreen> {
+class _ChartScreenState extends State<ChartScreen>
+    with AutomaticKeepAliveClientMixin {
   late TooltipBehavior _tooltipBehavior;
 
   @override
@@ -75,4 +76,8 @@ class _ChartScreenState extends State<ChartScreen> {
       ),
     );
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }
