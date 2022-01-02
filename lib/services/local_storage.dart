@@ -1,5 +1,5 @@
 import 'package:expense/models/category.dart';
-import 'package:expense/models/category_encap.dart';
+import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/services/storage.dart';
 import 'package:flutter/material.dart';
@@ -149,4 +149,16 @@ class LocalStorage implements Storage {
 
   @override
   Future<CategoryEncapsulator> getCategoryEncapsulator() async => _categories;
+
+  @override
+  Future<void> exportData({required BuildContext context}) {
+    // TODO: implement exportData
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> importData({required BuildContext context}) {
+    // TODO: implement importData
+    throw UnimplementedError();
+  }
 }

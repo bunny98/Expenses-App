@@ -1,7 +1,8 @@
 import 'package:expense/models/category.dart';
 import 'package:expense/models/expense.dart';
-import 'package:expense/models/category_encap.dart';
+import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/sql_table_names.dart';
+import 'package:expense/services/import_export_sql.dart';
 import 'package:expense/services/storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
@@ -10,6 +11,7 @@ import 'package:uuid/uuid.dart';
 
 class SQLStorage implements Storage {
   late Database dbInstance;
+  late ImportExportService _importExportService;
 
   @override
   Future<void> init({int daysToKeepRecord = -1}) async {
@@ -24,6 +26,7 @@ class SQLStorage implements Storage {
       version: 1,
     );
     dbInstance = db;
+    _importExportService = ImportExportService(db: dbInstance);
   }
 
   Future<void> createExpensesTable({required Database db}) async {
@@ -147,5 +150,15 @@ class SQLStorage implements Storage {
     debugPrint("EXECUTING SQL RMC CAT");
     await dbInstance.delete(SQLTableNames.CATEGORY_TABLE,
         where: category.getPrimaryKeySearchCondition());
+  }
+
+  @override
+  Future<void> exportData({required BuildContext context}) async {
+    await _importExportService.exportData(context);
+  }
+
+  @override
+  Future<void> importData({required BuildContext context}) async {
+    await _importExportService.importData(context);
   }
 }

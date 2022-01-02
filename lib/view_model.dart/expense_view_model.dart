@@ -1,5 +1,5 @@
 import 'package:expense/models/category.dart';
-import 'package:expense/models/category_encap.dart';
+import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/models/payment_method_data.dart';
 import 'package:expense/services/local_storage.dart';
@@ -21,27 +21,30 @@ class ExpenseViewModel with ChangeNotifier {
 
   Future<void> initViewModel() async {
     _storage.init(daysToKeepRecord: _daysToKeepRecord).then((_) async {
-      var _expenses = await _storage.getAllExpenses();
-      _categoryEncapsulator = await _storage.getCategoryEncapsulator();
-      _expenseMap = {};
-      for (var element in _categoryEncapsulator.getCategoryList()) {
-        _expenseMap.putIfAbsent(element, () => []);
-      }
-      _expenseMap.forEach((key, value) {
-        debugPrint(key.name + " -- " + value.length.toString());
-      });
-      for (var element in _expenses) {
-        _expenseMap
-            .update(_categoryEncapsulator.getCategoryFromId(element.categoryId),
-                (value) {
-          value.add(element);
-          return value;
-        });
-      }
-      _paymentMethodCountData = [];
-      _totalExpenditure = 0;
-      await calculateGraphDataAndTotalExpense();
+      await _stateInit();
     });
+  }
+
+  Future<void> _stateInit() async {
+    var _expenses = await _storage.getAllExpenses();
+    _categoryEncapsulator = await _storage.getCategoryEncapsulator();
+    _expenseMap = {};
+    for (var element in _categoryEncapsulator.getCategoryList()) {
+      _expenseMap.putIfAbsent(element, () => []);
+    }
+    _expenseMap.forEach((key, value) {
+      debugPrint(key.name + " -- " + value.length.toString());
+    });
+    for (var element in _expenses) {
+      _expenseMap.update(
+          _categoryEncapsulator.getCategoryFromId(element.categoryId), (value) {
+        value.add(element);
+        return value;
+      });
+    }
+    _paymentMethodCountData = [];
+    _totalExpenditure = 0;
+    await calculateGraphDataAndTotalExpense();
   }
 
   List<Category> getAllCategories() => _categoryEncapsulator.getCategoryList();
@@ -110,7 +113,7 @@ class ExpenseViewModel with ChangeNotifier {
 
   Future<void> clearStorage() async {
     await _storage.clearStorage();
-    await initViewModel();
+    await _stateInit();
     notifyListeners();
   }
 
@@ -139,5 +142,15 @@ class ExpenseViewModel with ChangeNotifier {
       res += element.totalExpense;
     }
     _totalExpenditure = res;
+  }
+
+  Future<void> importData(BuildContext context) async {
+    await _storage.importData(context: context);
+    await _stateInit();
+    notifyListeners();
+  }
+
+  Future<void> exportData(BuildContext context) async {
+    await _storage.exportData(context: context);
   }
 }

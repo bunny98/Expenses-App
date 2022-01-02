@@ -14,7 +14,7 @@ class CategoryEncapsulator {
 
   factory CategoryEncapsulator.defaultValue() {
     Set<Category> _categorySet = {};
-    var _uuid = Uuid();
+    var _uuid = const Uuid();
     _categorySet.add(Category(id: _uuid.v1(), name: "Food"));
     _categorySet.add(Category(id: _uuid.v1(), name: "Grocery"));
     _categorySet.add(Category(id: _uuid.v1(), name: "Investments"));

@@ -1,4 +1,4 @@
-import 'package:expense/models/category_encap.dart';
+import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/models/payment_type.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';

@@ -41,9 +41,19 @@ dependencies:
   rflutter_alert: ^2.0.4
   flutter_slidable: ^1.1.0
   syncfusion_flutter_charts: ^19.3.56
-  animated_bottom_navigation_bar: ^0.3.2
   sqflite: ^2.0.1
   path: 1.8.0
+  path_provider: ^2.0.8
+  permission_handler: ^8.3.0
+  package_info: ^2.0.2
+  filesystem_picker: ^2.0.0
+  fluttertoast: ^8.0.8
+  sqflite_common_porter:
+    git:
+      url: https://github.com/tekartik/sqflite_more
+      ref: dart2_3
+      path: sqflite_common_porter
+    version: '>=0.2.0'
 
 dev_dependencies:
   flutter_test:

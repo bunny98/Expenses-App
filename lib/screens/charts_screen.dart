@@ -1,5 +1,5 @@
 import 'package:expense/models/category.dart';
-import 'package:expense/models/category_encap.dart';
+import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/payment_method_data.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';
 import 'package:flutter/material.dart';
