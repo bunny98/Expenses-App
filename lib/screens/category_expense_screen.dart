@@ -67,7 +67,6 @@ class _CategoryExpenseScreenState extends State<CategoryExpenseScreen> {
                 child: Text("No expenses"),
               )
             : ListView.separated(
-                shrinkWrap: true,
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return const Padding(
@@ -80,45 +79,50 @@ class _CategoryExpenseScreenState extends State<CategoryExpenseScreen> {
                   }
                   List<Expense> _expenses =
                       _timeIndexedExpenses[index - 1].expenses;
-                  return ListView(shrinkWrap: true, children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              DateFormat('dd/MM/yyyy')
-                                  .format(_timeIndexedExpenses[index - 1].time),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 25),
+                  return ListView(
+                      shrinkWrap: true,
+                      physics: const ClampingScrollPhysics(),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  DateFormat('dd/MM/yyyy').format(
+                                      _timeIndexedExpenses[index - 1].time),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 25),
+                                ),
+                              ),
+                              Flexible(
+                                child: Text(
+                                  "\u{20B9}${_timeIndexedExpenses[index - 1].total}",
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 25),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                        for (int i = 0; i < _expenses.length; ++i)
+                          Slidable(
+                            key: ValueKey(_expenses[i].id),
+                            startActionPane: _getActionPane(_expenses[i]),
+                            endActionPane: _getActionPane(_expenses[i]),
+                            closeOnScroll: true,
+                            child: ListTile(
+                              subtitle: Text(DateFormat('hh:mm a')
+                                  .format(_expenses[i].time)),
+                              leading: Text("\u{20B9}${_expenses[i].amount}"),
+                              title: Text(_expenses[i].description),
+                              trailing: Text(_expenses[i].paymentType),
                             ),
                           ),
-                          Flexible(
-                            child: Text(
-                              "\u{20B9}${_timeIndexedExpenses[index - 1].total}",
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 25),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                    for (int i = 0; i < _expenses.length; ++i)
-                      Slidable(
-                        key: ValueKey(_expenses[i].id),
-                        startActionPane: _getActionPane(_expenses[i]),
-                        endActionPane: _getActionPane(_expenses[i]),
-                        closeOnScroll: true,
-                        child: ListTile(
-                          subtitle: Text(
-                              DateFormat('hh:mm a').format(_expenses[i].time)),
-                          leading: Text("\u{20B9}${_expenses[i].amount}"),
-                          title: Text(_expenses[i].description),
-                          trailing: Text(_expenses[i].paymentType),
-                        ),
-                      ),
-                  ]);
+                      ]);
                 },
                 separatorBuilder: (context, index) {
                   return const Divider();
