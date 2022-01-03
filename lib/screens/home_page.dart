@@ -37,11 +37,11 @@ class _MyHomePageState extends State<MyHomePage> {
           context.read<ExpenseViewModel>().exportData(context);
         });
     _poppupMenuEncapsulator.addItem(
-        key: "Import All Data",
+        key: "Import Data",
         onClick: () async {
           if (await showConfirmActionDialog(
               msg:
-                  "This will replace all your current data with imported data. Are you sure?",
+                  "This will add the imported data to your current data. Are you sure?",
               context: context)) {
             context.read<ExpenseViewModel>().importData(context);
           }

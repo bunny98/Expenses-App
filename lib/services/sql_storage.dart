@@ -7,7 +7,6 @@ import 'package:expense/services/storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
 
 class SQLStorage implements Storage {
   late Database dbInstance;

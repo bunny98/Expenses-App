@@ -1,4 +1,5 @@
 import 'package:expense/models/category.dart';
+import 'package:expense/models/time_indexed_expense.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/models/payment_method_data.dart';
@@ -57,7 +58,6 @@ class ExpenseViewModel with ChangeNotifier {
   int getTotalExpenditure() => _totalExpenditure;
 
   List<Expense> getExpensesForCategory(Category category) {
-    debugPrint(category.name);
     List<Expense> expenses = _expenseMap[category] ?? [];
     expenses.sort((b, a) => a.time.compareTo(b.time));
     return expenses;
@@ -152,5 +152,31 @@ class ExpenseViewModel with ChangeNotifier {
 
   Future<void> exportData(BuildContext context) async {
     await _storage.exportData(context: context);
+  }
+
+  List<TimeIndexedCategoryExpense> getAllTimeIndexedCategoryExpense(
+      Category category) {
+    List<TimeIndexedCategoryExpense> res = [];
+    List<Expense> expenses = getExpensesForCategory(category);
+    if (expenses.isNotEmpty) {
+      DateTime currTime = expenses[0].time;
+      List<Expense> currTimeExpenses = [expenses[0]];
+      int currTotal = expenses[0].amount;
+      for (int i = 1; i < expenses.length; ++i) {
+        if (expenses[i].time.day == currTime.day) {
+          currTimeExpenses.add(expenses[i]);
+          currTotal += expenses[i].amount;
+        } else {
+          res.add(TimeIndexedCategoryExpense(
+              total: currTotal, time: currTime, expenses: currTimeExpenses));
+          currTime = expenses[i].time;
+          currTimeExpenses = [expenses[i]];
+          currTotal = expenses[i].amount;
+        }
+      }
+      res.add(TimeIndexedCategoryExpense(
+          total: currTotal, time: currTime, expenses: currTimeExpenses));
+    }
+    return res;
   }
 }

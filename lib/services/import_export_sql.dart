@@ -2,10 +2,10 @@
 import 'dart:io';
 
 import 'package:expense/models/sql_table_names.dart';
+import 'package:expense/utils/global_func.dart';
 import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
@@ -17,17 +17,6 @@ class ImportExportService {
   ImportExportService({
     required this.db,
   });
-
-  Future<void> showToast(String msg) async {
-    await Fluttertoast.showToast(
-        msg: msg,
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16.0);
-  }
 
   Future<Directory> getRootDir() async {
     final String externalDirectory =
@@ -89,19 +78,35 @@ class ImportExportService {
         var file = File(path);
         try {
           String fileContents = await file.readAsString();
-          var commands = fileContents.split("\n");
-          await db.execute(
-            'DROP TABLE ${SQLTableNames.EXPENSES_TABLE}',
-          );
-          await db.execute(
-            'DROP TABLE ${SQLTableNames.CATEGORY_TABLE}',
-          );
-          await dbImportSql(db, commands);
-          showToast("Imported!");
+          var importedCommands = fileContents.split("\n");
+          var currentCommands = await getCurrentInsertCommands();
+
+          if (importedCommands.isNotEmpty) {
+            await db.execute(
+              'DROP TABLE ${SQLTableNames.EXPENSES_TABLE}',
+            );
+            await db.execute(
+              'DROP TABLE ${SQLTableNames.CATEGORY_TABLE}',
+            );
+            await dbImportSql(db, importedCommands);
+            await dbImportSql(db, currentCommands);
+            showToast("Imported!");
+          }
         } catch (e) {
           debugPrint(e.toString());
         }
       }
     }
+  }
+
+  Future<List<String>> getCurrentInsertCommands() async {
+    var currentCommands = await dbExportSql(db);
+    List<String> res = [];
+    for (var item in currentCommands) {
+      if (item.startsWith("INSERT INTO ${SQLTableNames.EXPENSES_TABLE}")) {
+        res.add(item);
+      }
+    }
+    return res;
   }
 }
