@@ -1,16 +1,19 @@
-import 'package:expense/models/categories.dart';
+import 'package:expense/models/category.dart';
+import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/services/storage.dart';
 import 'package:flutter/material.dart';
 import "package:shared_preferences/shared_preferences.dart";
+import 'package:uuid/uuid.dart';
 
 class LocalStorage implements Storage {
   late SharedPreferences _prefs;
   late List<String> _expensesStringList;
   late List<Expense> _storedExpenses;
-  late Categories _categories;
+  late CategoryEncapsulator _categories;
   final String _expenseKey = "expense";
   final String _categoryKey = "category";
+  final _uuid = Uuid();
 
   @override
   Future<void> init({int daysToKeepRecord = -1}) async {
@@ -34,9 +37,16 @@ class LocalStorage implements Storage {
       }
     }
     if (daysToKeepRecord > -1) _saveExpenses();
-    _categories =
-        Categories(categories: _prefs.getStringList(_categoryKey)?.toSet());
-    debugPrint(_prefs.getStringList(_categoryKey)?.toSet().toString());
+    var _categoryStringSet = _prefs.getStringList(_categoryKey)?.toSet();
+    if (_categoryStringSet != null) {
+      Set<Category> _categorySet =
+          Set.from(_categoryStringSet.map((ele) => Category.decode(ele)));
+      _categories = CategoryEncapsulator(
+          categories: _categorySet, defaultCategory: _categorySet.first);
+    } else {
+      _categories = CategoryEncapsulator.defaultValue();
+      _saveCategories();
+    }
   }
 
   void _saveExpenses() {
@@ -44,21 +54,32 @@ class LocalStorage implements Storage {
   }
 
   void _saveCategories() {
-    _prefs.setStringList(_categoryKey, _categories.getCategoryList());
+    _prefs.setStringList(_categoryKey,
+        _categories.getCategoryList().map((e) => Category.encode(e)).toList());
   }
 
   @override
-  void addExpense(Expense expense) {
+  Future<void> addExpense(Expense expense, Category category) async {
     _expensesStringList.add(Expense.encode(expense));
     _storedExpenses.add(expense);
+    _categories.overrideCategory(Category(
+        id: category.id,
+        name: category.name,
+        totalExpense: category.totalExpense + expense.amount));
+    _saveCategories();
     _saveExpenses();
   }
 
   @override
-  void removeExpense(Expense expense) {
+  Future<void> removeExpense(Expense expense, Category category) async {
     var index =
         _storedExpenses.indexWhere((element) => element.id == expense.id);
     _removeExpenseWithIndex(index);
+    _categories.overrideCategory(Category(
+        id: category.id,
+        name: category.name,
+        totalExpense: category.totalExpense - expense.amount));
+    _saveCategories();
   }
 
   void _removeExpenseWithIndex(int index) {
@@ -71,32 +92,45 @@ class LocalStorage implements Storage {
   }
 
   @override
-  void editExpense(Expense expense) {
+  Future<void> editExpense(
+      {required Expense oldExpense,
+      required Expense newExpense,
+      required Category oldCategory,
+      required Category newCategory}) async {
     int index =
-        _storedExpenses.indexWhere((element) => element.id == expense.id);
+        _storedExpenses.indexWhere((element) => element.id == oldExpense.id);
     if (index >= 0) {
-      _storedExpenses[index] = expense;
-      _expensesStringList[index] = Expense.encode(expense);
+      _storedExpenses[index] = newExpense;
+      _expensesStringList[index] = Expense.encode(newExpense);
       _saveExpenses();
     }
+    _categories.overrideCategory(Category(
+        id: oldCategory.id,
+        name: oldCategory.name,
+        totalExpense: oldCategory.totalExpense - oldExpense.amount));
+    _categories.overrideCategory(Category(
+        id: newCategory.id,
+        name: newCategory.name,
+        totalExpense: newCategory.totalExpense + newExpense.amount));
+    _saveCategories();
   }
 
   @override
-  void addCategory(String category) {
+  Future<void> addCategory(Category category) async {
     _categories.addCategory(category: category);
     _saveCategories();
   }
 
   @override
-  void removeCategory(String category) {
+  Future<void> removeCategory(Category category) async {
     _categories.removeCategory(category);
     _saveCategories();
-    _removeAllExpensesForCategory(category);
+    _removeAllExpensesForCategory(category.id);
   }
 
-  void _removeAllExpensesForCategory(String category) {
+  void _removeAllExpensesForCategory(String categoryId) {
     for (int i = 0; i < _storedExpenses.length; ++i) {
-      if (_storedExpenses[i].category == category) {
+      if (_storedExpenses[i].categoryId == categoryId) {
         debugPrint(
             "REMOVING EXPENSE WITH DESCRIPTION ${_storedExpenses[i].description}");
         _removeExpenseWithIndex(i);
@@ -105,14 +139,26 @@ class LocalStorage implements Storage {
   }
 
   @override
-  Categories getCategories() => _categories;
+  Future<List<Expense>> getAllExpenses() async => _storedExpenses;
 
   @override
-  List<Expense> getAllExpenses() => _storedExpenses;
-
-  @override
-  void clearStorage() {
+  Future<void> clearStorage() async {
     _prefs.remove(_expenseKey);
     _prefs.remove(_categoryKey);
+  }
+
+  @override
+  Future<CategoryEncapsulator> getCategoryEncapsulator() async => _categories;
+
+  @override
+  Future<void> exportData({required BuildContext context}) {
+    // TODO: implement exportData
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> importData({required BuildContext context}) {
+    // TODO: implement importData
+    throw UnimplementedError();
   }
 }

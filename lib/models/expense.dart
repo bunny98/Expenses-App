@@ -1,12 +1,15 @@
 import 'dart:convert';
 
+import 'package:expense/models/category.dart';
+import 'package:expense/models/sql_table_names.dart';
+
 class Expense {
   final String id;
+  final String categoryId;
   final int amount;
   final String description;
   final String paymentType;
   final DateTime time;
-  final String category;
 
   Expense(
       {required this.id,
@@ -14,7 +17,7 @@ class Expense {
       required this.description,
       required this.paymentType,
       required this.time,
-      required this.category});
+      required this.categoryId});
 
   factory Expense.fromJson(Map<String, dynamic> jsonData) {
     return Expense(
@@ -22,21 +25,25 @@ class Expense {
       amount: jsonData['amount'],
       description: jsonData['description'],
       paymentType: jsonData['paymentType'],
-      time: DateTime.parse(jsonData['time']),
-      category: jsonData['category'],
+      time: DateTime.fromMillisecondsSinceEpoch(jsonData['time']),
+      categoryId: jsonData['categoryId'],
     );
   }
 
-  static Map<String, dynamic> toMap(Expense expense) => {
-        'id': expense.id,
-        'amount': expense.amount,
-        'description': expense.description,
-        'paymentType': expense.paymentType,
-        'time': expense.time.toString(),
-        'category': expense.category,
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'amount': amount,
+        'description': description,
+        'paymentType': paymentType,
+        'time': time.millisecondsSinceEpoch,
+        'categoryId': categoryId,
       };
 
-  static String encode(Expense expense) => json.encode(Expense.toMap(expense));
+  String getPrimaryKeySearchCondition() => "id = \"$id\"";
+  static String encode(Expense expense) => json.encode(expense.toMap());
   static Expense decode(String expense) =>
       Expense.fromJson(json.decode(expense));
+
+  static String getSQLCreateDatatypes() =>
+      "(id TEXT PRIMARY KEY, categoryId TEXT NOT NULL, amount INTEGER, description TEXT, paymentType TEXT, time INTEGER, FOREIGN KEY (categoryId) REFERENCES ${SQLTableNames.CATEGORY_TABLE} (${Category.getPrimaryKeyName()}) ON DELETE CASCADE)";
 }

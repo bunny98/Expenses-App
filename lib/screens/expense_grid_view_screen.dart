@@ -1,41 +1,33 @@
+import 'package:expense/models/category.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'category_expense_screen.dart';
 
 class ExpenseGridViewScreen extends StatefulWidget {
-  const ExpenseGridViewScreen({Key? key}) : super(key: key);
+  const ExpenseGridViewScreen({Key? key, required this.scrollController})
+      : super(key: key);
+  final ScrollController scrollController;
 
   @override
   _ExpenseGridViewScreenState createState() => _ExpenseGridViewScreenState();
 }
 
-class _ExpenseGridViewScreenState extends State<ExpenseGridViewScreen> {
+class _ExpenseGridViewScreenState extends State<ExpenseGridViewScreen>
+    with AutomaticKeepAliveClientMixin {
   final _textStyle = const TextStyle(color: Colors.white);
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<ExpenseViewModel>(
-      builder: (context, model, child) => CustomScrollView(
+      builder: (context, model, _) => CustomScrollView(
+        controller: widget.scrollController,
         slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                "Total expenditure in last month: \u{20B9}${model.getTotalExpenditure()}",
-                style: const TextStyle(fontSize: 20),
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text(
-                "Categories",
-                style: TextStyle(fontSize: 18),
-              ),
-            ),
-          ),
           SliverGrid(
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 200.0,
@@ -62,11 +54,11 @@ class _ExpenseGridViewScreenState extends State<ExpenseGridViewScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           Text(
-                            model.getAllCategories()[index],
+                            model.getAllCategories()[index].name,
                             style: _textStyle,
                           ),
                           Text(
-                            "\u{20B9} ${model.getTotalExpenseOfCategory(model.getAllCategories()[index])}",
+                            "\u{20B9} ${model.getAllCategories()[index].totalExpense}",
                             style: _textStyle,
                           ),
                         ]),
@@ -80,4 +72,8 @@ class _ExpenseGridViewScreenState extends State<ExpenseGridViewScreen> {
       ),
     );
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }
