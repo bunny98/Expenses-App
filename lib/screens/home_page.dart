@@ -2,16 +2,18 @@ import 'package:expense/screens/add_edit_expense_screen.dart';
 import 'package:expense/screens/charts_screen.dart';
 import 'package:expense/screens/edit_category_screen.dart';
 import 'package:expense/screens/expense_grid_view_screen.dart';
+import 'package:expense/screens/qr_scanner.dart';
 import 'package:expense/utils/global_func.dart';
 import 'package:expense/utils/popup_menu_item_encap.dart';
+import 'package:expense/utils/upi_apps_encap.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';
 import 'package:flutter/material.dart';
-import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:provider/provider.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-  final String title;
+  const MyHomePage({
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -75,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
-          title: Text(widget.title),
+          title: const Text("Expenses"),
           actions: <Widget>[
             PopupMenuButton<String>(
               onSelected: _poppupMenuEncapsulator.getOnclickFunction(),
@@ -99,7 +101,20 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    if (context
+                        .read<ExpenseViewModel>()
+                        .getUpiAppEncapsulator()
+                        .getAppsList()
+                        .isNotEmpty) {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (ctx) => const QRScannerWidget()));
+                    } else {
+                      showToast("No UPI App Installed in your phone!");
+                    }
+                  },
                   child: const Icon(
                     Icons.qr_code,
                     color: Colors.black,
@@ -111,8 +126,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         Colors.white), // <-- Button color
                     overlayColor:
                         MaterialStateProperty.resolveWith<Color?>((states) {
-                      if (states.contains(MaterialState.pressed))
-                        return Colors.grey; // <-- Splash color
+                      if (states.contains(MaterialState.pressed)) {
+                        return Colors.grey;
+                      } // <-- Splash color
                     }),
                   ),
                 )
@@ -123,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () => showToast("Feature not coded yet."),
                           child: const Text(
                             "Sync with messages",
                             style: TextStyle(fontSize: 12),

@@ -1,18 +1,23 @@
 import 'package:expense/models/category.dart';
 import 'package:expense/models/time_indexed_expense.dart';
+import 'package:expense/models/upi_category.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/models/payment_method_data.dart';
 import 'package:expense/services/local_storage.dart';
 import 'package:expense/services/sql_storage.dart';
 import 'package:expense/services/storage.dart';
+import 'package:expense/utils/upi_apps_encap.dart';
 import 'package:flutter/material.dart';
+import 'package:upi_india/upi_india.dart';
 
 class ExpenseViewModel with ChangeNotifier {
   late Map<Category, List<Expense>> _expenseMap;
   late Storage _storage;
   late List<PaymentMethodData> _paymentMethodCountData;
   late CategoryEncapsulator _categoryEncapsulator;
+  late UpiAppsEncapsulator _upiAppsEncapsulator;
+  late UpiIndia _upiIndia;
   late int _totalExpenditure;
   final int _daysToKeepRecord = 30;
 
@@ -46,11 +51,19 @@ class ExpenseViewModel with ChangeNotifier {
     _paymentMethodCountData = [];
     _totalExpenditure = 0;
     await calculateGraphDataAndTotalExpense();
+    _upiIndia = UpiIndia();
+    _upiAppsEncapsulator = UpiAppsEncapsulator(
+      apps: await _upiIndia.getAllUpiApps(mandatoryTransactionId: false),
+    );
   }
 
   List<Category> getAllCategories() => _categoryEncapsulator.getCategoryList();
 
   CategoryEncapsulator getCategoryEncapsulator() => _categoryEncapsulator;
+
+  UpiAppsEncapsulator getUpiAppEncapsulator() => _upiAppsEncapsulator;
+
+  UpiIndia getUpiObj() => _upiIndia;
 
   List<PaymentMethodData> getPaymentMethodCountData() =>
       _paymentMethodCountData;
@@ -178,5 +191,20 @@ class ExpenseViewModel with ChangeNotifier {
           total: currTotal, time: currTime, expenses: currTimeExpenses));
     }
     return res;
+  }
+
+  Future<Category?> getCategoryForUpiId(String upiId) async {
+    UPICategory? upiCategory = await _storage.getUpiCategory(upiId: upiId);
+    return upiCategory != null
+        ? _categoryEncapsulator.getCategoryFromId(upiCategory.categoryId)
+        : null;
+  }
+
+  Future<void> addUpiCategory(UPICategory upiCategory) async {
+    await _storage.addUpiCategory(upiCategory);
+  }
+
+  Future<void> updateUpiCategory(UPICategory upiCategory) async {
+    await _storage.updateUpiCategory(upiCategory);
   }
 }
