@@ -28,6 +28,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   late List<Widget> _categoryWidgets;
   late bool _isEditing;
   late bool _isAddingFromCategoryPage;
+  late ExpenseViewModel _expenseViewModel;
   final _uuid = const Uuid();
   final String _amountKey = "amt";
   final String _descriptionKey = "des";
@@ -38,12 +39,12 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
+    _expenseViewModel = context.read<ExpenseViewModel>();
     _isEditing = widget.mode == AddExpenseMode.EDIT;
     _isAddingFromCategoryPage =
         widget.mode == AddExpenseMode.ADDITION_FROM_CATEGORY_PAGE;
     _data = {};
-    _categoryEncapsulator =
-        context.read<ExpenseViewModel>().getCategoryEncapsulator();
+    _categoryEncapsulator = _expenseViewModel.getCategoryEncapsulator();
 
     switch (widget.mode) {
       case AddExpenseMode.EDIT:
@@ -142,7 +143,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             paymentType: PaymentTypes.getChosenPaymentType(),
             time: widget.expense!.time,
             categoryId: _categoryEncapsulator.getChosenCategory().id);
-        await context.read<ExpenseViewModel>().editExpense(
+        await _expenseViewModel.editExpense(
             oldExpense: widget.expense!,
             newExpense: obj,
             oldCategory: _categoryEncapsulator
@@ -159,9 +160,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             paymentType: PaymentTypes.getChosenPaymentType(),
             time: DateTime.now(),
             categoryId: _categoryEncapsulator.getChosenCategory().id);
-        await context
-            .read<ExpenseViewModel>()
-            .addExpense(obj, _categoryEncapsulator.getChosenCategory());
+        await _expenseViewModel.addExpense(obj);
     }
     Navigator.pop(context);
   }

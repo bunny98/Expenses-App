@@ -88,7 +88,9 @@ class ExpenseViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addExpense(Expense expense, Category category) async {
+  Future<void> addExpense(Expense expense) async {
+    Category category =
+        _categoryEncapsulator.getCategoryFromId(expense.categoryId);
     await _storage.addExpense(expense, category);
     _expenseMap[category]!.add(expense);
     _expenseMap.forEach((key, value) {

@@ -127,14 +127,14 @@ class _PayFromQRScreenState extends State<PayFromQRScreen> {
       if (_errorString.isEmpty) {
         Category _chosenCategory = _categoryEncapsulator.getChosenCategory();
         await _expenseViewModel.addExpense(
-            Expense(
-                id: expenseId,
-                amount: widget.upiPayment.amount.toInt(),
-                description: widget.upiPayment.recipientName,
-                paymentType: PaymentTypes.getChosenPaymentType(),
-                time: DateTime.now(),
-                categoryId: _chosenCategory.id),
-            _chosenCategory);
+          Expense(
+              id: expenseId,
+              amount: widget.upiPayment.amount.toInt(),
+              description: widget.upiPayment.recipientName,
+              paymentType: PaymentTypes.getChosenPaymentType(),
+              time: DateTime.now(),
+              categoryId: _chosenCategory.id),
+        );
         if (_defaultCategory == null || (_defaultCategory != _chosenCategory)) {
           await _expenseViewModel.addUpiCategory(UPICategory(
               upiId: widget.upiPayment.upiID, categoryId: _chosenCategory.id));
