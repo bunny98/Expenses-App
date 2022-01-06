@@ -3,6 +3,7 @@ import 'package:expense/screens/charts_screen.dart';
 import 'package:expense/screens/edit_category_screen.dart';
 import 'package:expense/screens/expense_grid_view_screen.dart';
 import 'package:expense/screens/qr_scanner.dart';
+import 'package:expense/utils/add_expense_screen_enum.dart';
 import 'package:expense/utils/global_func.dart';
 import 'package:expense/utils/popup_menu_item_encap.dart';
 import 'package:expense/utils/upi_apps_encap.dart';
@@ -102,18 +103,19 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (context
-                        .read<ExpenseViewModel>()
-                        .getUpiAppEncapsulator()
-                        .getAppsList()
-                        .isNotEmpty) {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (ctx) => const QRScannerWidget()));
-                    } else {
-                      showToast("No UPI App Installed in your phone!");
-                    }
+                    // if (context
+                    //     .read<ExpenseViewModel>()
+                    //     .getUpiAppEncapsulator()
+                    //     .getAppsList()
+                    //     .isNotEmpty) {
+                    //   Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //           builder: (ctx) => const QRScannerWidget()));
+                    // } else {
+                    //   showToast("No UPI App Installed in your phone!");
+                    // }
+                    showToast("Feature not supported yet");
                   },
                   child: const Icon(
                     Icons.qr_code,
@@ -156,7 +158,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             context,
                             MaterialPageRoute(
                                 builder: (context) =>
-                                    const AddEditExpenseScreen())),
+                                    const AddEditExpenseScreen(
+                                      mode: AddExpenseMode.NEW_ADDITION,
+                                    ))),
                         child: const Icon(
                           Icons.add,
                           color: Colors.black,

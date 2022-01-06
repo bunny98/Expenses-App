@@ -18,35 +18,35 @@ class ImportExportService {
     required this.db,
   });
 
-  Future<Directory> getRootDir() async {
-    final String externalDirectory =
-        (await getExternalStorageDirectory())!.path;
-    var pathList = externalDirectory.split('/');
-    String pathToStorage = "";
-    String os = Platform.isAndroid ? "Android" : "iOS";
-    for (var ele in pathList) {
-      if (ele == os) break;
-      pathToStorage += "$ele/";
-    }
-    return Directory(pathToStorage);
-  }
+  // Future<Directory> getRootDir() async {
+  //   final String externalDirectory =
+  //       (await getExternalStorageDirectory())!.path;
+  //   var pathList = externalDirectory.split('/');
+  //   String pathToStorage = "";
+  //   String os = Platform.isAndroid ? "Android" : "iOS";
+  //   for (var ele in pathList) {
+  //     if (ele == os) break;
+  //     pathToStorage += "$ele/";
+  //   }
+  //   return Directory(pathToStorage);
+  // }
 
   Future<void> exportData(BuildContext context) async {
     var export = await dbExportSql(db);
+    export.removeWhere((element) => element.startsWith("CREATE TABLE"));
     // Share.share(export.toString(), subject: "DB STMTS");
     var strToExport = "";
     for (var item in export) {
-      if (item.startsWith("INSERT INTO")) {
-        strToExport += item;
-        if (export.last != item) strToExport += "\n";
-      }
+      strToExport += item;
+      if (export.last != item) strToExport += "\n";
     }
     if ((await Permission.storage.request()).isGranted) {
       // Directory? rootPath = await getExternalStorageDirectory();
       String? path = await FilesystemPicker.open(
           title: 'Save to folder',
           context: context,
-          rootDirectory: await getRootDir(),
+          rootName: "Downloads",
+          rootDirectory: Directory("/storage/emulated/0/Download/"),
           fsType: FilesystemType.folder,
           pickText: 'Save file',
           folderIconColor: Colors.teal,
@@ -70,8 +70,9 @@ class ImportExportService {
     if ((await Permission.storage.request()).isGranted) {
       String? path = await FilesystemPicker.open(
         title: 'Open file',
+        rootName: "Downloads",
         context: context,
-        rootDirectory: await getRootDir(),
+        rootDirectory: Directory("/storage/emulated/0/Download/"),
         fsType: FilesystemType.file,
         folderIconColor: Colors.teal,
         allowedExtensions: ['.txt'],

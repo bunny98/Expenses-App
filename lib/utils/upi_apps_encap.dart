@@ -1,19 +1,17 @@
-import 'package:upi_india/upi_app.dart';
+class UpiAppsEncapsulator<T> {
+  late List<T> _upiAppsList;
+  late T? _chosenUpiApp;
 
-class UpiAppsEncapsulator {
-  late List<UpiApp> _upiAppsList;
-  late UpiApp? _chosenUpiApp;
-
-  UpiAppsEncapsulator({required List<UpiApp> apps}) {
+  UpiAppsEncapsulator({required List<T> apps}) {
     _upiAppsList = apps;
     _chosenUpiApp = apps.isNotEmpty ? apps.first : null;
   }
 
-  List<UpiApp> getAppsList() => _upiAppsList;
+  List<T> getAppsList() => _upiAppsList;
 
-  void chooseUpiApp(UpiApp upiApp) {
+  void chooseUpiApp(T upiApp) {
     _chosenUpiApp = upiApp;
   }
 
-  UpiApp? getChosenUpiApp() => _chosenUpiApp;
+  T? getChosenUpiApp() => _chosenUpiApp;
 }

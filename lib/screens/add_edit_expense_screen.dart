@@ -1,3 +1,5 @@
+import 'package:expense/models/category.dart';
+import 'package:expense/utils/add_expense_screen_enum.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/models/payment_type.dart';
@@ -7,8 +9,12 @@ import 'package:uuid/uuid.dart';
 import 'package:provider/provider.dart';
 
 class AddEditExpenseScreen extends StatefulWidget {
-  const AddEditExpenseScreen({Key? key, this.expense}) : super(key: key);
+  const AddEditExpenseScreen(
+      {Key? key, this.expense, this.category, required this.mode})
+      : super(key: key);
   final Expense? expense;
+  final Category? category;
+  final AddExpenseMode mode;
 
   @override
   _AddEditExpenseScreenState createState() => _AddEditExpenseScreenState();
@@ -21,7 +27,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   late CategoryEncapsulator _categoryEncapsulator;
   late List<Widget> _categoryWidgets;
   late bool _isEditing;
-  late Future _initialFuture;
+  late bool _isAddingFromCategoryPage;
   final _uuid = const Uuid();
   final String _amountKey = "amt";
   final String _descriptionKey = "des";
@@ -32,25 +38,37 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
-    _isEditing = widget.expense != null;
+    _isEditing = widget.mode == AddExpenseMode.EDIT;
+    _isAddingFromCategoryPage =
+        widget.mode == AddExpenseMode.ADDITION_FROM_CATEGORY_PAGE;
     _data = {};
-    _data.putIfAbsent(
-        _descriptionKey, () => _isEditing ? widget.expense!.description : "");
-    _data.putIfAbsent(
-        _amountKey, () => _isEditing ? widget.expense!.amount : 0);
     _categoryEncapsulator =
         context.read<ExpenseViewModel>().getCategoryEncapsulator();
-    if (_isEditing) {
-      _categoryEncapsulator.chooseCategory(
-          _categoryEncapsulator.getCategoryFromId(widget.expense!.categoryId));
-      PaymentTypes.choosePaymentType(widget.expense!.paymentType);
-    } else {
-      _categoryEncapsulator.setDefaultCategory();
-      PaymentTypes.setDefaultPaymentType();
+
+    switch (widget.mode) {
+      case AddExpenseMode.EDIT:
+        _data.putIfAbsent(_descriptionKey, () => widget.expense!.description);
+        _data.putIfAbsent(_amountKey, () => widget.expense!.amount);
+        _categoryEncapsulator.chooseCategory(_categoryEncapsulator
+            .getCategoryFromId(widget.expense!.categoryId));
+        PaymentTypes.choosePaymentType(widget.expense!.paymentType);
+        _setCategoryWidgets();
+        break;
+      case AddExpenseMode.ADDITION_FROM_CATEGORY_PAGE:
+        _data.putIfAbsent(_descriptionKey, () => "");
+        _data.putIfAbsent(_amountKey, () => 0);
+        _categoryEncapsulator.chooseCategory(widget.category!);
+        PaymentTypes.setDefaultPaymentType();
+        break;
+      default:
+        _data.putIfAbsent(_descriptionKey, () => "");
+        _data.putIfAbsent(_amountKey, () => 0);
+        _categoryEncapsulator.setDefaultCategory();
+        PaymentTypes.setDefaultPaymentType();
+        _setCategoryWidgets();
     }
 
     _setPaymentMethodWidgets();
-    _setCategoryWidgets();
   }
 
   void _setPaymentMethodWidgets() {
@@ -112,37 +130,39 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     _formKey.currentState!.save();
 
     Expense obj;
-    if (_isEditing) {
-      obj = Expense(
-          id: widget.expense!.id,
-          amount: _data[_amountKey],
-          description: _data[_descriptionKey].toString().isEmpty
-              ? "Nil"
-              : _data[_descriptionKey],
-          paymentType: PaymentTypes.getChosenPaymentType(),
-          time: widget.expense!.time,
-          categoryId: _categoryEncapsulator.getChosenCategory().id);
-      await context.read<ExpenseViewModel>().editExpense(
-          oldExpense: widget.expense!,
-          newExpense: obj,
-          oldCategory: _categoryEncapsulator
-              .getCategoryFromId(widget.expense!.categoryId),
-          newCategory: _categoryEncapsulator.getChosenCategory());
-    } else {
-      obj = Expense(
-          id: _uuid.v1(),
-          amount: _data[_amountKey],
-          description: _data[_descriptionKey].toString().isEmpty
-              ? "Nil"
-              : _data[_descriptionKey],
-          paymentType: PaymentTypes.getChosenPaymentType(),
-          time: DateTime.now(),
-          categoryId: _categoryEncapsulator.getChosenCategory().id);
-      context
-          .read<ExpenseViewModel>()
-          .addExpense(obj, _categoryEncapsulator.getChosenCategory());
-    }
 
+    switch (widget.mode) {
+      case AddExpenseMode.EDIT:
+        obj = Expense(
+            id: widget.expense!.id,
+            amount: _data[_amountKey],
+            description: _data[_descriptionKey].toString().isEmpty
+                ? "Nil"
+                : _data[_descriptionKey],
+            paymentType: PaymentTypes.getChosenPaymentType(),
+            time: widget.expense!.time,
+            categoryId: _categoryEncapsulator.getChosenCategory().id);
+        await context.read<ExpenseViewModel>().editExpense(
+            oldExpense: widget.expense!,
+            newExpense: obj,
+            oldCategory: _categoryEncapsulator
+                .getCategoryFromId(widget.expense!.categoryId),
+            newCategory: _categoryEncapsulator.getChosenCategory());
+        break;
+      default:
+        obj = Expense(
+            id: _uuid.v1(),
+            amount: _data[_amountKey],
+            description: _data[_descriptionKey].toString().isEmpty
+                ? "Nil"
+                : _data[_descriptionKey],
+            paymentType: PaymentTypes.getChosenPaymentType(),
+            time: DateTime.now(),
+            categoryId: _categoryEncapsulator.getChosenCategory().id);
+        await context
+            .read<ExpenseViewModel>()
+            .addExpense(obj, _categoryEncapsulator.getChosenCategory());
+    }
     Navigator.pop(context);
   }
 
@@ -223,12 +243,15 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                     // SizedBox(
                     //   height: 10,
                     // ),
-                    const Text("Category"),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 5,
-                      children: _categoryWidgets,
-                    ),
+                    if (_isAddingFromCategoryPage)
+                      Text("Category: ${widget.category!.name}"),
+                    if (!_isAddingFromCategoryPage) const Text("Category"),
+                    if (!_isAddingFromCategoryPage)
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 5,
+                        children: _categoryWidgets,
+                      ),
                     // SizedBox(
                     //   height: 10,
                     // ),

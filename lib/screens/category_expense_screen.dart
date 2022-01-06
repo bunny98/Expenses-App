@@ -1,6 +1,7 @@
 import 'package:expense/models/category.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/models/time_indexed_expense.dart';
+import 'package:expense/utils/add_expense_screen_enum.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -43,6 +44,7 @@ class _CategoryExpenseScreenState extends State<CategoryExpenseScreen> {
               MaterialPageRoute(
                   builder: (context) => AddEditExpenseScreen(
                         expense: expense,
+                        mode: AddExpenseMode.EDIT,
                       ))),
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
@@ -63,18 +65,31 @@ class _CategoryExpenseScreenState extends State<CategoryExpenseScreen> {
         List<TimeIndexedCategoryExpense> _timeIndexedExpenses =
             model.getAllTimeIndexedCategoryExpense(widget.category);
         return _timeIndexedExpenses.isEmpty
-            ? const Center(
-                child: Text("No expenses"),
+            ? Center(
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Text(
+                    "Add Expenses",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  AddExpenseFromCategoryScreenButton(category: widget.category),
+                ]),
               )
             : ListView.separated(
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    return const Padding(
+                    return Padding(
                       padding: EdgeInsets.all(8.0),
-                      child: Text(
-                        "Swipe tile for options...",
-                        style: TextStyle(color: Colors.grey),
-                      ),
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Swipe tile for options...",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            AddExpenseFromCategoryScreenButton(
+                                category: widget.category),
+                          ]),
                     );
                   }
                   List<Expense> _expenses =
@@ -130,5 +145,25 @@ class _CategoryExpenseScreenState extends State<CategoryExpenseScreen> {
                 itemCount: _timeIndexedExpenses.length + 1);
       }),
     );
+  }
+}
+
+class AddExpenseFromCategoryScreenButton extends StatelessWidget {
+  const AddExpenseFromCategoryScreenButton({
+    Key? key,
+    required this.category,
+  }) : super(key: key);
+
+  final Category category;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (ctx) => AddEditExpenseScreen(
+                  category: category,
+                  mode: AddExpenseMode.ADDITION_FROM_CATEGORY_PAGE,
+                ))),
+        icon: const Icon(Icons.add, color: Colors.black));
   }
 }

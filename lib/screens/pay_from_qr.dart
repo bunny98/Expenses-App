@@ -7,11 +7,11 @@ import 'package:expense/models/upi_category.dart';
 import 'package:expense/models/upi_payment.dart';
 import 'package:expense/screens/home_page.dart';
 import 'package:expense/utils/category_encap.dart';
+import 'package:expense/utils/transaction_status.dart';
 import 'package:expense/utils/upi_apps_encap.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:upi_india/upi_india.dart';
 import 'package:uuid/uuid.dart';
 
 class PayFromQRScreen extends StatefulWidget {
@@ -24,35 +24,31 @@ class PayFromQRScreen extends StatefulWidget {
 
 class _PayFromQRScreenState extends State<PayFromQRScreen> {
   late GlobalKey<FormState> _formKey;
+  late ExpenseViewModel _expenseViewModel;
   late Future<Category?> _getDefaultCategoryFuture;
   late List<Widget> _categoryWidgets;
   late List<Widget> _upiAppsWidgets;
   late UpiAppsEncapsulator _upiAppsEncapsulator;
   late CategoryEncapsulator _categoryEncapsulator;
   late Category? _defaultCategory;
-  late UpiIndia _upiIndia;
   late bool _isLoading;
   late String _errorString;
   final _foregroundColor = MaterialStateProperty.all<Color>(Colors.white);
   final _backgroundColor = MaterialStateProperty.all<Color>(Colors.black);
 
-  get receiverName => null;
-
   @override
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
+    _expenseViewModel = context.read<ExpenseViewModel>();
     _getDefaultCategoryFuture = getUPICategory();
     _defaultCategory = null;
     _isLoading = false;
     _errorString = "";
-    _upiIndia = context.read<ExpenseViewModel>().getUpiObj();
-    _categoryEncapsulator =
-        context.read<ExpenseViewModel>().getCategoryEncapsulator();
+    _categoryEncapsulator = _expenseViewModel.getCategoryEncapsulator();
     _categoryEncapsulator.setDefaultCategory();
     PaymentTypes.choosePaymentType("UPI");
-    _upiAppsEncapsulator =
-        context.read<ExpenseViewModel>().getUpiAppEncapsulator();
+    _upiAppsEncapsulator = _expenseViewModel.getUpiAppEncapsulator();
     _setCategoryWidgets();
     _setUpiAppsWidgets();
   }
@@ -124,35 +120,24 @@ class _PayFromQRScreenState extends State<PayFromQRScreen> {
       });
       String expenseId = Random().nextInt(10).toString() +
           const Uuid().v1().replaceAll("-", "").substring(0, 11);
-      var res = await _upiIndia
-          .startTransaction(
-              amount: widget.upiPayment.amount.toDouble(),
-              app: _upiAppsEncapsulator.getChosenUpiApp()!,
-              receiverUpiId: widget.upiPayment.upiID,
-              receiverName: widget.upiPayment.recipientName,
-              transactionRefId: expenseId)
-          .onError((error, stackTrace) {
-        _errorString = _upiErrorHandler(error.runtimeType);
-        return UpiResponse(_errorString);
-      });
-      if (res.status != UpiPaymentStatus.SUCCESS) {
-        _errorString = "ERROR OCCURED";
-      }
+      TransactionStatus status = await _expenseViewModel.initiateUpiTransaction(
+          upiPayment: widget.upiPayment, expenseId: expenseId);
+      _errorString =
+          status == TransactionStatus.FAILURE ? "ERROR OCCURED!" : "";
       if (_errorString.isEmpty) {
-        await context.read<ExpenseViewModel>().addExpense(
+        Category _chosenCategory = _categoryEncapsulator.getChosenCategory();
+        await _expenseViewModel.addExpense(
             Expense(
                 id: expenseId,
-                amount: widget.upiPayment.amount,
+                amount: widget.upiPayment.amount.toInt(),
                 description: widget.upiPayment.recipientName,
                 paymentType: PaymentTypes.getChosenPaymentType(),
                 time: DateTime.now(),
-                categoryId: _categoryEncapsulator.getChosenCategory().id),
-            _categoryEncapsulator.getChosenCategory());
-        if (_defaultCategory == null ||
-            (_defaultCategory != _categoryEncapsulator.getChosenCategory())) {
-          await context.read<ExpenseViewModel>().addUpiCategory(UPICategory(
-              upiId: widget.upiPayment.upiID,
-              categoryId: _categoryEncapsulator.getChosenCategory().id));
+                categoryId: _chosenCategory.id),
+            _chosenCategory);
+        if (_defaultCategory == null || (_defaultCategory != _chosenCategory)) {
+          await _expenseViewModel.addUpiCategory(UPICategory(
+              upiId: widget.upiPayment.upiID, categoryId: _chosenCategory.id));
         }
         Navigator.pushAndRemoveUntil(
             context,
@@ -190,8 +175,8 @@ class _PayFromQRScreenState extends State<PayFromQRScreen> {
                         style: const TextStyle(fontSize: 30),
                         keyboardType: TextInputType.number,
                         onSaved: (amt) {
-                          if (amt!.isNotEmpty && int.tryParse(amt) != null) {
-                            widget.upiPayment.amount = int.parse(amt);
+                          if (amt!.isNotEmpty && double.tryParse(amt) != null) {
+                            widget.upiPayment.amount = double.parse(amt);
                           }
                         },
                         decoration: const InputDecoration(
@@ -200,8 +185,8 @@ class _PayFromQRScreenState extends State<PayFromQRScreen> {
                         ),
                         validator: (ip) {
                           if (ip!.isEmpty ||
-                              int.tryParse(ip) == null ||
-                              int.parse(ip) <= 0) {
+                              double.tryParse(ip) == null ||
+                              double.parse(ip) <= 0) {
                             return "Are you kidding me?";
                           }
                         },
@@ -220,7 +205,6 @@ class _PayFromQRScreenState extends State<PayFromQRScreen> {
                         ),
                       ),
                     ),
-                    const Text("Payment Method: UPI"),
                     const Text("Category"),
                     FutureBuilder(
                         future: _getDefaultCategoryFuture,
@@ -277,21 +261,6 @@ class _PayFromQRScreenState extends State<PayFromQRScreen> {
         ),
       ),
     );
-  }
-
-  String _upiErrorHandler(error) {
-    switch (error) {
-      case UpiIndiaAppNotInstalledException:
-        return 'Requested app not installed on device';
-      case UpiIndiaUserCancelledException:
-        return 'You cancelled the transaction';
-      case UpiIndiaNullResponseException:
-        return 'Requested app didn\'t return any response';
-      case UpiIndiaInvalidParametersException:
-        return 'Requested app cannot handle the transaction';
-      default:
-        return 'An Unknown error has occurred';
-    }
   }
 
   @override

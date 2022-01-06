@@ -1,33 +1,36 @@
 import 'package:expense/models/category.dart';
 import 'package:expense/models/time_indexed_expense.dart';
 import 'package:expense/models/upi_category.dart';
+import 'package:expense/models/upi_payment.dart';
+import 'package:expense/services/upi_service.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/models/payment_method_data.dart';
 import 'package:expense/services/local_storage.dart';
 import 'package:expense/services/sql_storage.dart';
 import 'package:expense/services/storage.dart';
+import 'package:expense/utils/transaction_status.dart';
 import 'package:expense/utils/upi_apps_encap.dart';
 import 'package:flutter/material.dart';
-import 'package:upi_india/upi_india.dart';
 
 class ExpenseViewModel with ChangeNotifier {
   late Map<Category, List<Expense>> _expenseMap;
   late Storage _storage;
+  late UpiService _upiService;
   late List<PaymentMethodData> _paymentMethodCountData;
   late CategoryEncapsulator _categoryEncapsulator;
-  late UpiAppsEncapsulator _upiAppsEncapsulator;
-  late UpiIndia _upiIndia;
   late int _totalExpenditure;
   final int _daysToKeepRecord = 30;
 
   ExpenseViewModel() {
     _storage = SQLStorage();
+    _upiService = UpiService();
   }
 
   Future<void> initViewModel() async {
     _storage.init(daysToKeepRecord: _daysToKeepRecord).then((_) async {
       await _stateInit();
+      await _upiService.init();
     });
   }
 
@@ -51,19 +54,14 @@ class ExpenseViewModel with ChangeNotifier {
     _paymentMethodCountData = [];
     _totalExpenditure = 0;
     await calculateGraphDataAndTotalExpense();
-    _upiIndia = UpiIndia();
-    _upiAppsEncapsulator = UpiAppsEncapsulator(
-      apps: await _upiIndia.getAllUpiApps(mandatoryTransactionId: false),
-    );
   }
 
   List<Category> getAllCategories() => _categoryEncapsulator.getCategoryList();
 
   CategoryEncapsulator getCategoryEncapsulator() => _categoryEncapsulator;
 
-  UpiAppsEncapsulator getUpiAppEncapsulator() => _upiAppsEncapsulator;
-
-  UpiIndia getUpiObj() => _upiIndia;
+  UpiAppsEncapsulator getUpiAppEncapsulator() =>
+      _upiService.getUpiAppEncapsulator();
 
   List<PaymentMethodData> getPaymentMethodCountData() =>
       _paymentMethodCountData;
@@ -206,5 +204,11 @@ class ExpenseViewModel with ChangeNotifier {
 
   Future<void> updateUpiCategory(UPICategory upiCategory) async {
     await _storage.updateUpiCategory(upiCategory);
+  }
+
+  Future<TransactionStatus> initiateUpiTransaction(
+      {required UPIPayment upiPayment, required String expenseId}) async {
+    return await _upiService.initiateTransaction(
+        upiPayment: upiPayment, expenseId: expenseId);
   }
 }

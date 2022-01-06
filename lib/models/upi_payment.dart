@@ -1,19 +1,17 @@
 class UPIPayment {
-  late int _amount;
+  late double _amount;
   late String _recipientName;
   late String _upiID;
-  late bool _isFinal;
 
-  UPIPayment({int? amount, String? recipientName, String? upiId}) {
+  UPIPayment({double? amount, String? recipientName, String? upiId}) {
     _amount = amount ?? 0;
     _recipientName = recipientName ?? "";
     _upiID = upiId ?? "";
-    _isFinal = false;
   }
 
-  int get amount => _amount;
+  double get amount => _amount;
 
-  set amount(int amount) {
+  set amount(double amount) {
     _amount = amount;
   }
 
@@ -27,12 +25,6 @@ class UPIPayment {
 
   set recipientName(String recipientName) {
     _recipientName = recipientName;
-  }
-
-  bool get isFinal => _isFinal;
-
-  set isFinal(bool isFinal) {
-    _isFinal = isFinal;
   }
 
   @override
