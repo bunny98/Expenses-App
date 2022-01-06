@@ -7,6 +7,7 @@ import 'package:expense/view_model.dart/expense_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:provider/provider.dart';
+import 'package:date_time_picker/date_time_picker.dart';
 
 class AddEditExpenseScreen extends StatefulWidget {
   const AddEditExpenseScreen(
@@ -32,6 +33,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   final _uuid = const Uuid();
   final String _amountKey = "amt";
   final String _descriptionKey = "des";
+  final String _dateTimeKey = "time";
   final _foregroundColor = MaterialStateProperty.all<Color>(Colors.white);
   final _backgroundColor = MaterialStateProperty.all<Color>(Colors.black);
 
@@ -50,6 +52,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       case AddExpenseMode.EDIT:
         _data.putIfAbsent(_descriptionKey, () => widget.expense!.description);
         _data.putIfAbsent(_amountKey, () => widget.expense!.amount);
+        _data.putIfAbsent(_dateTimeKey, () => widget.expense!.time);
         _categoryEncapsulator.chooseCategory(_categoryEncapsulator
             .getCategoryFromId(widget.expense!.categoryId));
         PaymentTypes.choosePaymentType(widget.expense!.paymentType);
@@ -58,12 +61,14 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       case AddExpenseMode.ADDITION_FROM_CATEGORY_PAGE:
         _data.putIfAbsent(_descriptionKey, () => "");
         _data.putIfAbsent(_amountKey, () => 0);
+        _data.putIfAbsent(_dateTimeKey, () => DateTime.now());
         _categoryEncapsulator.chooseCategory(widget.category!);
         PaymentTypes.setDefaultPaymentType();
         break;
       default:
         _data.putIfAbsent(_descriptionKey, () => "");
         _data.putIfAbsent(_amountKey, () => 0);
+        _data.putIfAbsent(_dateTimeKey, () => DateTime.now());
         _categoryEncapsulator.setDefaultCategory();
         PaymentTypes.setDefaultPaymentType();
         _setCategoryWidgets();
@@ -82,7 +87,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               _setPaymentMethodWidgets();
             });
           },
-          child: Text(element),
+          child: Text(
+            element,
+            style: TextStyle(fontSize: 10),
+          ),
           style: ButtonStyle(
               foregroundColor: PaymentTypes.getChosenPaymentType() == element
                   ? _foregroundColor
@@ -107,7 +115,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               _setCategoryWidgets();
             });
           },
-          child: Text(element.name),
+          child: Text(
+            element.name,
+            style: TextStyle(fontSize: 10),
+          ),
           style: ButtonStyle(
               foregroundColor:
                   _categoryEncapsulator.getChosenCategory() == element
@@ -141,7 +152,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 ? "Nil"
                 : _data[_descriptionKey],
             paymentType: PaymentTypes.getChosenPaymentType(),
-            time: widget.expense!.time,
+            time: _data[_dateTimeKey],
             categoryId: _categoryEncapsulator.getChosenCategory().id);
         await _expenseViewModel.editExpense(
             oldExpense: widget.expense!,
@@ -158,7 +169,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 ? "Nil"
                 : _data[_descriptionKey],
             paymentType: PaymentTypes.getChosenPaymentType(),
-            time: DateTime.now(),
+            time: _data[_dateTimeKey],
             categoryId: _categoryEncapsulator.getChosenCategory().id);
         await _expenseViewModel.addExpense(obj);
     }
@@ -233,7 +244,11 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                     // SizedBox(
                     //   height: 10,
                     // ),
-                    const Text("Payment Method"),
+                    const Text(
+                      "Payment Method",
+                      style:
+                          TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
                     Wrap(
                       alignment: WrapAlignment.center,
                       spacing: 5,
@@ -243,14 +258,39 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                     //   height: 10,
                     // ),
                     if (_isAddingFromCategoryPage)
-                      Text("Category: ${widget.category!.name}"),
-                    if (!_isAddingFromCategoryPage) const Text("Category"),
+                      Text(
+                        "Category: ${widget.category!.name}",
+                        style: TextStyle(
+                            fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    if (!_isAddingFromCategoryPage)
+                      const Text(
+                        "Category",
+                        style: TextStyle(
+                            fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
                     if (!_isAddingFromCategoryPage)
                       Wrap(
                         alignment: WrapAlignment.center,
                         spacing: 5,
                         children: _categoryWidgets,
                       ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.5,
+                      child: DateTimePicker(
+                        style: const TextStyle(fontSize: 14),
+                        type: DateTimePickerType.dateTime,
+                        // dateMask: 'd MMM, yyyy',
+                        initialValue: _data[_dateTimeKey].toString(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now(),
+                        icon: const Icon(Icons.event),
+                        dateLabelText: 'Date',
+                        timeLabelText: "Time",
+                        onChanged: (val) =>
+                            _data[_dateTimeKey] = DateTime.parse(val),
+                      ),
+                    ),
                     // SizedBox(
                     //   height: 10,
                     // ),

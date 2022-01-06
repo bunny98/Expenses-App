@@ -50,6 +50,7 @@ dependencies:
   fluttertoast: ^8.0.8
   qr_code_scanner: ^0.6.1
   upi_india: ^3.0.1
+  date_time_picker: ^2.1.0
   sqflite_common_porter:
     git:
       url: https://github.com/tekartik/sqflite_more
