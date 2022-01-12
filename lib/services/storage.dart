@@ -1,3 +1,4 @@
+import 'package:expense/models/archive_params.dart';
 import 'package:expense/models/category.dart';
 import 'package:expense/models/upi_category.dart';
 import 'package:expense/utils/category_encap.dart';
@@ -23,4 +24,12 @@ abstract class Storage {
   Future<UPICategory?> getUpiCategory({required String upiId});
   Future<void> addUpiCategory(UPICategory upiCategory);
   Future<void> updateUpiCategory(UPICategory upiCategory);
+  Future<void> archiveAllExpenses();
+  Future<void> archiveExpense({required Expense expense});
+  Future<List<Expense>> getAllArchivedExpensesOfCategory(
+      {required Category category});
+  Future<void> unArchiveExpense(
+      {required Expense expense, required Category category});
+  Future<void> saveArchiveParams({required ArchiveParams archiveParams});
+  ArchiveParams? getArchiveParams();
 }

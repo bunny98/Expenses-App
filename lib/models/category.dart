@@ -38,6 +38,7 @@ class Category {
   }
 
   String getPrimaryKeySearchCondition() => "id = \"$id\"";
+  String getSearchConditionForExpense() => "categoryId = \"$id\"";
   static String getPrimaryKeyName() => "id";
   static String encode(Category category) => json.encode(category.toMap());
   static Category decode(String category) =>
