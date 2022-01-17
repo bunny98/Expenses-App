@@ -1,6 +1,7 @@
 import 'package:expense/models/archive_params.dart';
 import 'package:expense/screens/add_edit_expense_screen.dart';
 import 'package:expense/screens/charts_screen.dart';
+import 'package:expense/screens/day_expense_screen.dart';
 import 'package:expense/screens/edit_category_screen.dart';
 import 'package:expense/screens/expense_grid_view_screen.dart';
 import 'package:expense/screens/qr_scanner.dart';
@@ -36,6 +37,8 @@ class _MyHomePageState extends State<MyHomePage> {
               MaterialPageRoute(
                   builder: (context) => const EditCategoryScreen()));
         });
+    _poppupMenuEncapsulator.addItem(
+        key: "Schedule Archive", onClick: _onScheduleArchive);
     _poppupMenuEncapsulator.addItem(
         key: "Export All Data",
         onClick: () {
@@ -92,6 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
               content: Form(
                 key: _formKey,
                 child: TextFormField(
+                  keyboardType: TextInputType.number,
                   initialValue: currentParams != null
                       ? currentParams.archiveOnEvery.toString()
                       : null,
@@ -104,7 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     }
                   },
                   onSaved: (newValue) => res = int.parse(newValue!),
-                  autofocus: true,
+                  autofocus: currentParams == null,
                   decoration: const InputDecoration(
                     hintText: "Enter a date (1-30)",
                   ),
@@ -234,9 +238,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ElevatedButton(
-                          onPressed: _onScheduleArchive,
+                          onPressed: () {
+                            Navigator.of(context).push(MaterialPageRoute(
+                                builder: (ctx) => DayExpenseScreen()));
+                          },
                           child: const Text(
-                            "Schedule Archive",
+                            "View Day Expenses",
                             style: TextStyle(fontSize: 12),
                           ),
                           style: ButtonStyle(
