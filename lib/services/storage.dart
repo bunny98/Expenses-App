@@ -18,6 +18,7 @@ abstract class Storage {
   Future<void> addCategory(Category category);
   Future<void> removeCategory(Category category);
   Future<List<Expense>> getAllExpenses();
+  Future<List<Expense>> getAllExpensesOnDate({required DateTime datetime});
   Future<CategoryEncapsulator> getCategoryEncapsulator();
   Future<void> importData({required BuildContext context});
   Future<void> exportData({required BuildContext context});
@@ -26,6 +27,8 @@ abstract class Storage {
   Future<void> updateUpiCategory(UPICategory upiCategory);
   Future<void> archiveAllExpenses();
   Future<void> archiveExpense({required Expense expense});
+  Future<List<Expense>> getAllArchivedExpensesOnDate(
+      {required DateTime datetime});
   Future<List<Expense>> getAllArchivedExpensesOfCategory(
       {required Category category});
   Future<void> unArchiveExpense(

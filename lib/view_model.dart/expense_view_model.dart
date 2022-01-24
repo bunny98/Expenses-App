@@ -41,12 +41,15 @@ class ExpenseViewModel with ChangeNotifier {
   Future<void> _initArchiveState() async {
     _archiveParams = _storage.getArchiveParams();
     if (_archiveParams != null) {
+      debugPrint(
+          "ARCHIVE PARAMS : ${_archiveParams!.archiveOnEvery} ${_archiveParams!.nextArchiveOn.toString()}  ${_archiveParams!.prevArchiveOn.toString()}");
       if (_archiveParams!.nextArchiveOn.isSameDate(DateTime.now()) ||
           _archiveParams!.nextArchiveOn.isBefore(DateTime.now())) {
         await _storage.archiveAllExpenses();
         await _storage.saveArchiveParams(
             archiveParams: ArchiveParams.fromArchiveOnEvery(
-                archiveOnEvery: _archiveParams!.archiveOnEvery));
+                archiveOnEvery: _archiveParams!.archiveOnEvery,
+                previouslyAchivedOn: DateTime.now()));
       }
     }
   }
@@ -248,6 +251,10 @@ class ExpenseViewModel with ChangeNotifier {
 
   Future<void> archiveAllExpenses() async {
     await _storage.archiveAllExpenses();
+    await _storage.saveArchiveParams(
+        archiveParams: ArchiveParams.fromArchiveOnEvery(
+            archiveOnEvery: _archiveParams!.archiveOnEvery,
+            previouslyAchivedOn: DateTime.now()));
     await _appStateInit();
     notifyListeners();
   }
@@ -257,6 +264,20 @@ class ExpenseViewModel with ChangeNotifier {
     List<Expense> expenses =
         await _storage.getAllArchivedExpensesOfCategory(category: category);
     expenses.sort((b, a) => a.time.compareTo(b.time));
+    return expenses;
+  }
+
+  Future<List<Expense>> getAllArchivedExpensesOfDate(
+      {required DateTime dateTime}) async {
+    List<Expense> expenses =
+        await _storage.getAllArchivedExpensesOnDate(datetime: dateTime);
+    return expenses;
+  }
+
+  Future<List<Expense>> getAllExpensesOfDate(
+      {required DateTime dateTime}) async {
+    List<Expense> expenses =
+        await _storage.getAllExpensesOnDate(datetime: dateTime);
     return expenses;
   }
 }
