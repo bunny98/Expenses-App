@@ -1,4 +1,6 @@
+import 'package:expense/models/archive_params.dart';
 import 'package:expense/models/category.dart';
+import 'package:expense/models/upi_category.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/services/storage.dart';
@@ -159,6 +161,62 @@ class LocalStorage implements Storage {
   @override
   Future<void> importData({required BuildContext context}) {
     // TODO: implement importData
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> addUpiCategory(UPICategory upiCategory) {
+    // TODO: implement addUpiCategory
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateUpiCategory(UPICategory upiCategory) {
+    // TODO: implement updateUpiCategory
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<UPICategory> getUpiCategory({required String upiId}) {
+    // TODO: implement getUpiCategory
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> archiveAllExpenses() {
+    // TODO: implement archiveAllExpenses
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> archiveExpense({required Expense expense}) {
+    // TODO: implement archiveExpense
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<Expense>> getAllArchivedExpensesOfCategory(
+      {required Category category}) {
+    // TODO: implement getAllArchivedExpenses
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> unArchiveExpense(
+      {required Expense expense, required Category category}) {
+    // TODO: implement unArchiveExpense
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> saveArchiveParams({required ArchiveParams archiveParams}) {
+    // TODO: implement saveArchiveParams
+    throw UnimplementedError();
+  }
+
+  @override
+  ArchiveParams? getArchiveParams() {
+    // TODO: implement getArchiveParams
     throw UnimplementedError();
   }
 }

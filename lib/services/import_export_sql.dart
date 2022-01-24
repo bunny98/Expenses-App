@@ -18,21 +18,22 @@ class ImportExportService {
     required this.db,
   });
 
-  Future<Directory> getRootDir() async {
-    final String externalDirectory =
-        (await getExternalStorageDirectory())!.path;
-    var pathList = externalDirectory.split('/');
-    String pathToStorage = "";
-    String os = Platform.isAndroid ? "Android" : "iOS";
-    for (var ele in pathList) {
-      if (ele == os) break;
-      pathToStorage += "$ele/";
-    }
-    return Directory(pathToStorage);
-  }
+  // Future<Directory> getRootDir() async {
+  //   final String externalDirectory =
+  //       (await getExternalStorageDirectory())!.path;
+  //   var pathList = externalDirectory.split('/');
+  //   String pathToStorage = "";
+  //   String os = Platform.isAndroid ? "Android" : "iOS";
+  //   for (var ele in pathList) {
+  //     if (ele == os) break;
+  //     pathToStorage += "$ele/";
+  //   }
+  //   return Directory(pathToStorage);
+  // }
 
   Future<void> exportData(BuildContext context) async {
     var export = await dbExportSql(db);
+    export.removeWhere((element) => element.startsWith("CREATE TABLE"));
     // Share.share(export.toString(), subject: "DB STMTS");
     var strToExport = "";
     for (var item in export) {
@@ -44,7 +45,8 @@ class ImportExportService {
       String? path = await FilesystemPicker.open(
           title: 'Save to folder',
           context: context,
-          rootDirectory: await getRootDir(),
+          rootName: "Downloads",
+          rootDirectory: Directory("/storage/emulated/0/Download/"),
           fsType: FilesystemType.folder,
           pickText: 'Save file',
           folderIconColor: Colors.teal,
@@ -63,12 +65,14 @@ class ImportExportService {
     }
   }
 
-  Future<void> importData(BuildContext context) async {
+  Future<void> importData(BuildContext context,
+      Function({bool shouldInitCategory}) clearStorage) async {
     if ((await Permission.storage.request()).isGranted) {
       String? path = await FilesystemPicker.open(
         title: 'Open file',
+        rootName: "Downloads",
         context: context,
-        rootDirectory: await getRootDir(),
+        rootDirectory: Directory("/storage/emulated/0/Download/"),
         fsType: FilesystemType.file,
         folderIconColor: Colors.teal,
         allowedExtensions: ['.txt'],
@@ -79,17 +83,18 @@ class ImportExportService {
         try {
           String fileContents = await file.readAsString();
           var importedCommands = fileContents.split("\n");
-          var currentCommands = await getCurrentInsertCommands();
+          List<String> commandsToExecute = [];
+          for (var element in importedCommands) {
+            if (element.startsWith("INSERT INTO")) {
+              commandsToExecute.add(element);
+            }
+          }
 
-          if (importedCommands.isNotEmpty) {
-            await db.execute(
-              'DROP TABLE ${SQLTableNames.EXPENSES_TABLE}',
-            );
-            await db.execute(
-              'DROP TABLE ${SQLTableNames.CATEGORY_TABLE}',
-            );
-            await dbImportSql(db, importedCommands);
-            await dbImportSql(db, currentCommands);
+          var currentCommands = await getCurrentInsertCommands();
+          commandsToExecute.addAll(currentCommands);
+          if (commandsToExecute.isNotEmpty) {
+            await clearStorage(shouldInitCategory: false);
+            await dbImportSql(db, commandsToExecute);
             showToast("Imported!");
           }
         } catch (e) {
@@ -103,7 +108,8 @@ class ImportExportService {
     var currentCommands = await dbExportSql(db);
     List<String> res = [];
     for (var item in currentCommands) {
-      if (item.startsWith("INSERT INTO ${SQLTableNames.EXPENSES_TABLE}")) {
+      if (item.startsWith("INSERT INTO ${SQLTableNames.EXPENSES_TABLE}") ||
+          item.startsWith("INSERT INTO ${SQLTableNames.UPI_CATEGORY_TABLE}")) {
         res.add(item);
       }
     }

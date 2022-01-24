@@ -1,16 +1,20 @@
+import 'package:expense/models/archive_params.dart';
 import 'package:expense/models/category.dart';
 import 'package:expense/models/expense.dart';
+import 'package:expense/models/upi_category.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/sql_table_names.dart';
 import 'package:expense/services/import_export_sql.dart';
 import 'package:expense/services/storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
 class SQLStorage implements Storage {
   late Database dbInstance;
   late ImportExportService _importExportService;
+  late SharedPreferences _prefs;
 
   @override
   Future<void> init({int daysToKeepRecord = -1}) async {
@@ -18,14 +22,23 @@ class SQLStorage implements Storage {
     Database db = await openDatabase(
       join(await getDatabasesPath(), 'expenses_database.db'),
       onCreate: (db, version) async {
-        await createCategoryTable(db: db);
+        await createCategoryTable(db: db, shouldInit: true);
         await createExpensesTable(db: db);
+        // await createUpiCategoryTable(db: db);
+        await createArchivedTable(db: db);
       },
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
       version: 1,
     );
     dbInstance = db;
+    _prefs = await SharedPreferences.getInstance();
     _importExportService = ImportExportService(db: dbInstance);
+  }
+
+  Future<bool> tableExists({required String tableName}) async {
+    var res = await dbInstance
+        .query('sqlite_master', where: 'name = ?', whereArgs: [tableName]);
+    return res.isNotEmpty;
   }
 
   Future<void> createExpensesTable({required Database db}) async {
@@ -34,16 +47,31 @@ class SQLStorage implements Storage {
         "CREATE TABLE ${SQLTableNames.EXPENSES_TABLE} ${Expense.getSQLCreateDatatypes()}");
   }
 
-  Future<void> createCategoryTable({required Database db}) async {
-    debugPrint("EXECUTING CREAT CAT");
+  Future<void> createCategoryTable(
+      {required Database db, required bool shouldInit}) async {
+    debugPrint("EXECUTING CREATE CAT");
     await db.execute(
         "CREATE TABLE ${SQLTableNames.CATEGORY_TABLE} ${Category.getSQLCreateDatatypes()}");
-    var _defaultCategories =
-        CategoryEncapsulator.defaultValue().getCategoryList();
-    for (var item in _defaultCategories) {
-      await db.insert(SQLTableNames.CATEGORY_TABLE, item.toMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace);
+    if (shouldInit) {
+      var _defaultCategories =
+          CategoryEncapsulator.defaultValue().getCategoryList();
+      for (var item in _defaultCategories) {
+        await db.insert(SQLTableNames.CATEGORY_TABLE, item.toMap(),
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
     }
+  }
+
+  Future<void> createUpiCategoryTable({required Database db}) async {
+    debugPrint("EXECUTING CREATE UPI CAT TABLE");
+    await db.execute(
+        "CREATE TABLE ${SQLTableNames.UPI_CATEGORY_TABLE} ${UPICategory.getSQLCreateDatatypes()}");
+  }
+
+  Future<void> createArchivedTable({required Database db}) async {
+    debugPrint("EXECUTING CREATE ARCHIVED TABLE");
+    await db.execute(
+        "CREATE TABLE ${SQLTableNames.ARCHIVED_TABLE} ${Expense.getSQLCreateDatatypes()}");
   }
 
   @override
@@ -69,7 +97,7 @@ class SQLStorage implements Storage {
   }
 
   @override
-  Future<void> clearStorage() async {
+  Future<void> clearStorage({bool shouldInitCategory = true}) async {
     debugPrint("EXECUTING SQL CLEAR STORAGE");
     await dbInstance.execute(
       'DROP TABLE ${SQLTableNames.EXPENSES_TABLE}',
@@ -77,8 +105,16 @@ class SQLStorage implements Storage {
     await dbInstance.execute(
       'DROP TABLE ${SQLTableNames.CATEGORY_TABLE}',
     );
-    await createCategoryTable(db: dbInstance);
+    await dbInstance.execute(
+      'DROP TABLE ${SQLTableNames.ARCHIVED_TABLE}',
+    );
+    // await dbInstance.execute(
+    //   'DROP TABLE ${SQLTableNames.UPI_CATEGORY_TABLE}',
+    // );
+    await createCategoryTable(db: dbInstance, shouldInit: shouldInitCategory);
     await createExpensesTable(db: dbInstance);
+    await createArchivedTable(db: dbInstance);
+    // await createUpiCategoryTable(db: dbInstance);
   }
 
   @override
@@ -158,6 +194,93 @@ class SQLStorage implements Storage {
 
   @override
   Future<void> importData({required BuildContext context}) async {
-    await _importExportService.importData(context);
+    await _importExportService.importData(context, clearStorage);
+  }
+
+  @override
+  Future<void> addUpiCategory(UPICategory upiCategory) async {
+    debugPrint("EXECUTING SQL ADD UPI CAT");
+    await dbInstance.insert(
+        SQLTableNames.UPI_CATEGORY_TABLE, upiCategory.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  @override
+  Future<void> updateUpiCategory(UPICategory upiCategory) async {
+    debugPrint("EXECUTING SQL UPDATE UPI CAT");
+    await dbInstance.update(
+        SQLTableNames.UPI_CATEGORY_TABLE, upiCategory.toMap(),
+        where: upiCategory.getPrimaryKeySearchCondition());
+  }
+
+  @override
+  Future<UPICategory?> getUpiCategory({required String upiId}) async {
+    UPICategory upiCategory = UPICategory(upiId: upiId, categoryId: "");
+    var res = await dbInstance.query(SQLTableNames.UPI_CATEGORY_TABLE,
+        where: upiCategory.getPrimaryKeySearchCondition());
+    if (res.isEmpty) return null;
+    return UPICategory.fromJson(res.first);
+  }
+
+  @override
+  Future<void> archiveAllExpenses() async {
+    debugPrint("EXECUTING ARCHIVE ALL EXPENSES");
+    //TRANSFER ALL EXPENSES TO ARCHIVED TABLE
+    await dbInstance.execute(
+        "INSERT INTO ${SQLTableNames.ARCHIVED_TABLE} SELECT * FROM ${SQLTableNames.EXPENSES_TABLE}");
+    await dbInstance.execute(
+      'DROP TABLE ${SQLTableNames.EXPENSES_TABLE}',
+    );
+    await createExpensesTable(db: dbInstance);
+    //SET ALL CATEGORY TOTALS TO ZERO
+    await dbInstance
+        .execute("UPDATE ${SQLTableNames.CATEGORY_TABLE} SET totalExpense=0");
+  }
+
+  @override
+  Future<void> archiveExpense({required Expense expense}) async {
+    //TRANSFER EXPENSE TO ARCHIVED TABLE
+    debugPrint("EXECUTING ARCHIVE EXPENSE");
+    await dbInstance.insert(SQLTableNames.ARCHIVED_TABLE, expense.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  @override
+  Future<List<Expense>> getAllArchivedExpensesOfCategory(
+      {required Category category}) async {
+    debugPrint("EXECUTING GET ALL ARCHIVE EXPENSE");
+    var res = await dbInstance.query(SQLTableNames.ARCHIVED_TABLE,
+        where: category.getSearchConditionForExpense());
+    List<Expense> expenses = [];
+    for (var element in res) {
+      expenses.add(Expense.fromJson(element));
+    }
+    return expenses;
+  }
+
+  @override
+  Future<void> unArchiveExpense(
+      {required Expense expense, required Category category}) async {
+    debugPrint("EXECUTING UNARCHIVE EXPENSE");
+    await dbInstance.delete(SQLTableNames.ARCHIVED_TABLE,
+        where: expense.getPrimaryKeySearchCondition());
+  }
+
+  @override
+  Future<void> saveArchiveParams({required ArchiveParams archiveParams}) async {
+    debugPrint("EXECUTING SAVE ARCHIVE PARAMS");
+    await _prefs.setString(
+        ArchiveParams.sharedPrefKey, ArchiveParams.encode(archiveParams));
+  }
+
+  @override
+  ArchiveParams? getArchiveParams() {
+    debugPrint("EXECUTING GET ARCHIVE EXPENSE");
+    String? res = _prefs.getString(ArchiveParams.sharedPrefKey);
+    ArchiveParams? archiveParams;
+    if (res != null) {
+      archiveParams = ArchiveParams.decode(res);
+    }
+    return archiveParams;
   }
 }

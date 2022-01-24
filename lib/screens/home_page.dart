@@ -1,17 +1,23 @@
+import 'package:expense/models/archive_params.dart';
 import 'package:expense/screens/add_edit_expense_screen.dart';
 import 'package:expense/screens/charts_screen.dart';
+import 'package:expense/screens/day_expense_screen.dart';
 import 'package:expense/screens/edit_category_screen.dart';
 import 'package:expense/screens/expense_grid_view_screen.dart';
+import 'package:expense/screens/qr_scanner.dart';
+import 'package:expense/utils/add_expense_screen_enum.dart';
 import 'package:expense/utils/global_func.dart';
 import 'package:expense/utils/popup_menu_item_encap.dart';
+import 'package:expense/utils/upi_apps_encap.dart';
+import 'package:expense/utils/date_time_extensions.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';
 import 'package:flutter/material.dart';
-import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:provider/provider.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-  final String title;
+  const MyHomePage({
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -31,6 +37,8 @@ class _MyHomePageState extends State<MyHomePage> {
               MaterialPageRoute(
                   builder: (context) => const EditCategoryScreen()));
         });
+    _poppupMenuEncapsulator.addItem(
+        key: "Schedule Archive", onClick: _onScheduleArchive);
     _poppupMenuEncapsulator.addItem(
         key: "Export All Data",
         onClick: () {
@@ -67,6 +75,73 @@ class _MyHomePageState extends State<MyHomePage> {
     ];
   }
 
+  Future<void> _onArchiveAllExpenses() async {
+    if (await showConfirmActionDialog(
+        context: context,
+        msg: "This will archive all your current expenses. Are you sure?")) {
+      await context.read<ExpenseViewModel>().archiveAllExpenses();
+    }
+  }
+
+  Future<void> _onScheduleArchive() async {
+    GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+    int? res;
+    ArchiveParams? currentParams =
+        context.read<ExpenseViewModel>().getArchiveParams();
+    await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+              title: const Text("Schedule Every Month Archive"),
+              content: Form(
+                key: _formKey,
+                child: TextFormField(
+                  keyboardType: TextInputType.number,
+                  initialValue: currentParams != null
+                      ? currentParams.archiveOnEvery.toString()
+                      : null,
+                  validator: (ip) {
+                    if (ip!.isEmpty ||
+                        int.tryParse(ip) == null ||
+                        int.parse(ip) <= 0 ||
+                        int.parse(ip) > 30) {
+                      return "Jitna bola jae utna kro bhosdk";
+                    }
+                  },
+                  onSaved: (newValue) => res = int.parse(newValue!),
+                  autofocus: currentParams == null,
+                  decoration: const InputDecoration(
+                    hintText: "Enter a date (1-30)",
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton.icon(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        _formKey.currentState!.save();
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    icon: const Icon(Icons.done_outline_rounded),
+                    label: const Text("Submit")),
+                TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    icon: const Icon(Icons.cancel_outlined),
+                    label: const Text("Cancel"))
+              ],
+            ));
+    if (res != null) {
+      await context.read<ExpenseViewModel>().scheduleArchive(
+          archiveParams:
+              ArchiveParams.fromArchiveOnEvery(archiveOnEvery: res!));
+      if (DateTime.now().isToday(res!)) {
+        await _onArchiveAllExpenses();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -75,7 +150,7 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
-          title: Text(widget.title),
+          title: const Text("Expenses"),
           actions: <Widget>[
             PopupMenuButton<String>(
               onSelected: _poppupMenuEncapsulator.getOnclickFunction(),
@@ -98,21 +173,61 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                 ),
+                // ElevatedButton(
+                //   onPressed: () {
+                //     if (context
+                //         .read<ExpenseViewModel>()
+                //         .getUpiAppEncapsulator()
+                //         .getAppsList()
+                //         .isNotEmpty) {
+                //       Navigator.push(
+                //           context,
+                //           MaterialPageRoute(
+                //               builder: (ctx) => const QRScannerWidget()));
+                //     } else {
+                //       showToast("No UPI App Installed in your phone!");
+                //     }
+                //     showToast("Feature not supported yet");
+                //   },
+                //   child: const Icon(
+                //     Icons.qr_code,
+                //     color: Colors.black,
+                //   ),
+                //   style: ButtonStyle(
+                //     shape: MaterialStateProperty.all(CircleBorder()),
+                //     padding: MaterialStateProperty.all(EdgeInsets.all(10)),
+                //     backgroundColor: MaterialStateProperty.all(
+                //         Colors.white), // <-- Button color
+                //     overlayColor:
+                //         MaterialStateProperty.resolveWith<Color?>((states) {
+                //       if (states.contains(MaterialState.pressed)) {
+                //         return Colors.grey;
+                //       } // <-- Splash color
+                //     }),
+                //   ),
+                // )
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AddEditExpenseScreen(
+                                mode: AddExpenseMode.NEW_ADDITION,
+                              ))),
                   child: const Icon(
-                    Icons.qr_code,
+                    Icons.add,
                     color: Colors.black,
                   ),
                   style: ButtonStyle(
-                    shape: MaterialStateProperty.all(CircleBorder()),
-                    padding: MaterialStateProperty.all(EdgeInsets.all(10)),
+                    shape: MaterialStateProperty.all(const CircleBorder()),
+                    padding:
+                        MaterialStateProperty.all(const EdgeInsets.all(10)),
                     backgroundColor: MaterialStateProperty.all(
                         Colors.white), // <-- Button color
                     overlayColor:
                         MaterialStateProperty.resolveWith<Color?>((states) {
-                      if (states.contains(MaterialState.pressed))
-                        return Colors.grey; // <-- Splash color
+                      if (states.contains(MaterialState.pressed)) {
+                        return Colors.grey;
+                      } // <-- Splash color
                     }),
                   ),
                 )
@@ -123,9 +238,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.of(context).push(MaterialPageRoute(
+                                builder: (ctx) => DayExpenseScreen()));
+                          },
                           child: const Text(
-                            "Sync with messages",
+                            "View Day Expenses",
                             style: TextStyle(fontSize: 12),
                           ),
                           style: ButtonStyle(
@@ -136,19 +254,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                       side: const BorderSide(
                                           color: Colors.white))))),
                       ElevatedButton(
-                        onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    const AddEditExpenseScreen())),
+                        onPressed: _onArchiveAllExpenses,
                         child: const Icon(
-                          Icons.add,
+                          Icons.archive_outlined,
                           color: Colors.black,
                         ),
                         style: ButtonStyle(
-                          shape: MaterialStateProperty.all(CircleBorder()),
-                          padding:
-                              MaterialStateProperty.all(EdgeInsets.all(10)),
+                          shape:
+                              MaterialStateProperty.all(const CircleBorder()),
+                          padding: MaterialStateProperty.all(
+                              const EdgeInsets.all(10)),
                           backgroundColor: MaterialStateProperty.all(
                               Colors.white), // <-- Button color
                           overlayColor:
@@ -159,7 +274,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             } // <-- Splash color
                           }),
                         ),
-                      )
+                      ),
                     ]),
               ),
             ]),

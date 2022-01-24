@@ -1,41 +1,63 @@
+import 'package:expense/models/archive_params.dart';
 import 'package:expense/models/category.dart';
 import 'package:expense/models/time_indexed_expense.dart';
+import 'package:expense/models/upi_category.dart';
+import 'package:expense/models/upi_payment.dart';
+import 'package:expense/services/upi_service.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/models/payment_method_data.dart';
 import 'package:expense/services/local_storage.dart';
 import 'package:expense/services/sql_storage.dart';
 import 'package:expense/services/storage.dart';
+import 'package:expense/utils/transaction_status.dart';
+import 'package:expense/utils/upi_apps_encap.dart';
+import 'package:expense/utils/date_time_extensions.dart';
 import 'package:flutter/material.dart';
 
 class ExpenseViewModel with ChangeNotifier {
   late Map<Category, List<Expense>> _expenseMap;
   late Storage _storage;
+  // late UpiService _upiService;
   late List<PaymentMethodData> _paymentMethodCountData;
   late CategoryEncapsulator _categoryEncapsulator;
+  late ArchiveParams? _archiveParams;
   late int _totalExpenditure;
   final int _daysToKeepRecord = 30;
 
   ExpenseViewModel() {
     _storage = SQLStorage();
+    // _upiService = UpiService();
   }
 
   Future<void> initViewModel() async {
     _storage.init(daysToKeepRecord: _daysToKeepRecord).then((_) async {
-      await _stateInit();
+      await _initArchiveState();
+      await _appStateInit();
+      // await _upiService.init();
     });
   }
 
-  Future<void> _stateInit() async {
+  Future<void> _initArchiveState() async {
+    _archiveParams = _storage.getArchiveParams();
+    if (_archiveParams != null) {
+      if (_archiveParams!.nextArchiveOn.isSameDate(DateTime.now()) ||
+          _archiveParams!.nextArchiveOn.isBefore(DateTime.now())) {
+        await _storage.archiveAllExpenses();
+        await _storage.saveArchiveParams(
+            archiveParams: ArchiveParams.fromArchiveOnEvery(
+                archiveOnEvery: _archiveParams!.archiveOnEvery));
+      }
+    }
+  }
+
+  Future<void> _appStateInit() async {
     var _expenses = await _storage.getAllExpenses();
     _categoryEncapsulator = await _storage.getCategoryEncapsulator();
     _expenseMap = {};
     for (var element in _categoryEncapsulator.getCategoryList()) {
       _expenseMap.putIfAbsent(element, () => []);
     }
-    _expenseMap.forEach((key, value) {
-      debugPrint(key.name + " -- " + value.length.toString());
-    });
     for (var element in _expenses) {
       _expenseMap.update(
           _categoryEncapsulator.getCategoryFromId(element.categoryId), (value) {
@@ -43,8 +65,10 @@ class ExpenseViewModel with ChangeNotifier {
         return value;
       });
     }
+
     _paymentMethodCountData = [];
     _totalExpenditure = 0;
+
     await calculateGraphDataAndTotalExpense();
   }
 
@@ -52,10 +76,15 @@ class ExpenseViewModel with ChangeNotifier {
 
   CategoryEncapsulator getCategoryEncapsulator() => _categoryEncapsulator;
 
+  // UpiAppsEncapsulator getUpiAppEncapsulator() =>
+  //     _upiService.getUpiAppEncapsulator();
+
   List<PaymentMethodData> getPaymentMethodCountData() =>
       _paymentMethodCountData;
 
   int getTotalExpenditure() => _totalExpenditure;
+
+  ArchiveParams? getArchiveParams() => _archiveParams;
 
   List<Expense> getExpensesForCategory(Category category) {
     List<Expense> expenses = _expenseMap[category] ?? [];
@@ -77,18 +106,18 @@ class ExpenseViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addExpense(Expense expense, Category category) async {
+  Future<void> addExpense(Expense expense) async {
+    Category category =
+        _categoryEncapsulator.getCategoryFromId(expense.categoryId);
     await _storage.addExpense(expense, category);
     _expenseMap[category]!.add(expense);
-    _expenseMap.forEach((key, value) {
-      debugPrint(key.name + " -- " + value.length.toString());
-    });
     await calculateGraphDataAndTotalExpense();
     notifyListeners();
   }
 
-  Future<void> removeExpense(Expense expense, Category category) async {
-    await _storage.removeExpense(expense, category);
+  Future<void> removeExpense(Expense expense) async {
+    await _storage.removeExpense(
+        expense, _categoryEncapsulator.getCategoryFromId(expense.categoryId));
     _expenseMap[_categoryEncapsulator.getCategoryFromId(expense.categoryId)]!
         .removeWhere((element) => element.id == expense.id);
     await calculateGraphDataAndTotalExpense();
@@ -113,7 +142,7 @@ class ExpenseViewModel with ChangeNotifier {
 
   Future<void> clearStorage() async {
     await _storage.clearStorage();
-    await _stateInit();
+    await _appStateInit();
     notifyListeners();
   }
 
@@ -146,7 +175,7 @@ class ExpenseViewModel with ChangeNotifier {
 
   Future<void> importData(BuildContext context) async {
     await _storage.importData(context: context);
-    await _stateInit();
+    await _appStateInit();
     notifyListeners();
   }
 
@@ -155,9 +184,8 @@ class ExpenseViewModel with ChangeNotifier {
   }
 
   List<TimeIndexedCategoryExpense> getAllTimeIndexedCategoryExpense(
-      Category category) {
+      Category category, List<Expense> expenses) {
     List<TimeIndexedCategoryExpense> res = [];
-    List<Expense> expenses = getExpensesForCategory(category);
     if (expenses.isNotEmpty) {
       DateTime currTime = expenses[0].time;
       List<Expense> currTimeExpenses = [expenses[0]];
@@ -178,5 +206,57 @@ class ExpenseViewModel with ChangeNotifier {
           total: currTotal, time: currTime, expenses: currTimeExpenses));
     }
     return res;
+  }
+
+  Future<Category?> getCategoryForUpiId(String upiId) async {
+    UPICategory? upiCategory = await _storage.getUpiCategory(upiId: upiId);
+    return upiCategory != null
+        ? _categoryEncapsulator.getCategoryFromId(upiCategory.categoryId)
+        : null;
+  }
+
+  Future<void> addUpiCategory(UPICategory upiCategory) async {
+    await _storage.addUpiCategory(upiCategory);
+  }
+
+  Future<void> updateUpiCategory(UPICategory upiCategory) async {
+    await _storage.updateUpiCategory(upiCategory);
+  }
+
+  // Future<TransactionStatus> initiateUpiTransaction(
+  //     {required UPIPayment upiPayment, required String expenseId}) async {
+  //   return await _upiService.initiateTransaction(
+  //       upiPayment: upiPayment, expenseId: expenseId);
+  // }
+
+  Future<void> scheduleArchive({required ArchiveParams archiveParams}) async {
+    _archiveParams = archiveParams;
+    await _storage.saveArchiveParams(archiveParams: archiveParams);
+  }
+
+  Future<void> archiveExpense({required Expense expense}) async {
+    await _storage.archiveExpense(expense: expense);
+    await removeExpense(expense);
+  }
+
+  Future<void> unArchiveExpense({required Expense expense}) async {
+    await addExpense(expense);
+    await _storage.unArchiveExpense(
+        expense: expense,
+        category: _categoryEncapsulator.getCategoryFromId(expense.categoryId));
+  }
+
+  Future<void> archiveAllExpenses() async {
+    await _storage.archiveAllExpenses();
+    await _appStateInit();
+    notifyListeners();
+  }
+
+  Future<List<Expense>> getAllArchivedExpensesForCategory(
+      {required Category category}) async {
+    List<Expense> expenses =
+        await _storage.getAllArchivedExpensesOfCategory(category: category);
+    expenses.sort((b, a) => a.time.compareTo(b.time));
+    return expenses;
   }
 }
