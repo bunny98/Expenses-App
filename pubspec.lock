@@ -253,7 +253,7 @@ packages:
       name: path_provider_macos
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.4"
+    version: "2.0.5"
   path_provider_platform_interface:
     dependency: transitive
     description:
@@ -405,7 +405,7 @@ packages:
       name: sqflite
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.1"
+    version: "2.0.2"
   sqflite_common:
     dependency: transitive
     description:
@@ -419,7 +419,7 @@ packages:
       name: sqflite_common_ffi
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.0"
+    version: "2.1.0+2"
   sqflite_common_porter:
     dependency: "direct main"
     description:
@@ -435,7 +435,7 @@ packages:
       name: sqlite3
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.4.0"
+    version: "1.5.1"
   stack_trace:
     dependency: transitive
     description:
@@ -483,16 +483,16 @@ packages:
     description:
       path: "."
       ref: dart2_3
-      resolved-ref: "109d8f4b9d30c9ecd54ef65db0fda5da70d7930a"
+      resolved-ref: "713a341aa74d6556555cff0c96086c3d5a0ea5d2"
       url: "https://github.com/tekartik/common_utils.dart"
     source: git
-    version: "0.13.3"
+    version: "0.13.4"
   tekartik_lints:
     dependency: transitive
     description:
       path: "packages/lints"
       ref: dart2_3
-      resolved-ref: "0a4b9decf98beabef02763da2fa97a9ebafe5991"
+      resolved-ref: "6f7aca2ae2c2fe9b285d5f42483918311f8d52cb"
       url: "https://github.com/tekartik/common.dart"
     source: git
     version: "0.1.2"

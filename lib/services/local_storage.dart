@@ -219,4 +219,17 @@ class LocalStorage implements Storage {
     // TODO: implement getArchiveParams
     throw UnimplementedError();
   }
+
+  @override
+  Future<List<Expense>> getAllArchivedExpensesOnDate(
+      {required DateTime datetime}) {
+    // TODO: implement getAllArchivedExpensesOnDate
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<Expense>> getAllExpensesOnDate({required DateTime datetime}) {
+    // TODO: implement getAllExpensesOnDate
+    throw UnimplementedError();
+  }
 }

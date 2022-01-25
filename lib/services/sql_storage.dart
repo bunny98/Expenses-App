@@ -283,4 +283,36 @@ class SQLStorage implements Storage {
     }
     return archiveParams;
   }
+
+  @override
+  Future<List<Expense>> getAllArchivedExpensesOnDate(
+      {required DateTime datetime}) async {
+    debugPrint("EXECUTING GET ALL ARCHIVE ON DATE");
+    List<Expense> expenses = [];
+    var from = DateTime(datetime.year, datetime.month, datetime.day);
+    var to = DateTime(datetime.year, datetime.month, datetime.day + 1);
+    var res = await dbInstance.query(SQLTableNames.ARCHIVED_TABLE,
+        where: "time BETWEEN ? AND ?",
+        whereArgs: [from.millisecondsSinceEpoch, to.millisecondsSinceEpoch]);
+    for (var element in res) {
+      expenses.add(Expense.fromJson(element));
+    }
+    return expenses;
+  }
+
+  @override
+  Future<List<Expense>> getAllExpensesOnDate(
+      {required DateTime datetime}) async {
+    debugPrint("EXECUTING GET ALL EXPENSES ON DATE");
+    List<Expense> expenses = [];
+    var from = DateTime(datetime.year, datetime.month, datetime.day);
+    var to = DateTime(datetime.year, datetime.month, datetime.day + 1);
+    var res = await dbInstance.query(SQLTableNames.EXPENSES_TABLE,
+        where: "time BETWEEN ? AND ?",
+        whereArgs: [from.millisecondsSinceEpoch, to.millisecondsSinceEpoch]);
+    for (var element in res) {
+      expenses.add(Expense.fromJson(element));
+    }
+    return expenses;
+  }
 }

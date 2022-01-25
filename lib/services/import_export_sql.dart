@@ -13,6 +13,7 @@ import 'package:sqflite_common_porter/sqflite_porter.dart';
 
 class ImportExportService {
   final Database db;
+  final Directory? rootPath = Directory("/storage/emulated/0/");
 
   ImportExportService({
     required this.db,
@@ -41,12 +42,12 @@ class ImportExportService {
       if (export.last != item) strToExport += "\n";
     }
     if ((await Permission.storage.request()).isGranted) {
-      // Directory? rootPath = await getExternalStorageDirectory();
+      debugPrint(rootPath!.path);
       String? path = await FilesystemPicker.open(
           title: 'Save to folder',
           context: context,
-          rootName: "Downloads",
-          rootDirectory: Directory("/storage/emulated/0/Download/"),
+          rootName: "Storage",
+          rootDirectory: rootPath!,
           fsType: FilesystemType.folder,
           pickText: 'Save file',
           folderIconColor: Colors.teal,
@@ -72,7 +73,7 @@ class ImportExportService {
         title: 'Open file',
         rootName: "Downloads",
         context: context,
-        rootDirectory: Directory("/storage/emulated/0/Download/"),
+        rootDirectory: rootPath!,
         fsType: FilesystemType.file,
         folderIconColor: Colors.teal,
         allowedExtensions: ['.txt'],
