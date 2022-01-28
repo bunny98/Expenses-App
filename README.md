@@ -8,12 +8,14 @@ A cross-platform Flutter application that helps you record your expenses and pro
 - Export/Import expenses data into the application
 - Bar and pie charts to visualize current month expenses
 - View Category-wise expenses of the month
-- View Day-wise archived/unarchived expenses 
+- View Day-wise archived/unarchived expenses
 
 ## Screenshots
 <p align="center">
   <img width="200" height="400" src="Pictures/1.jpg">&nbsp;&nbsp;&nbsp;&nbsp;<img src="Pictures/2.jpg" width="200" height="400">&nbsp;&nbsp;&nbsp;&nbsp;<img src="Pictures/3.jpg" width="200" height="400">&nbsp;&nbsp;&nbsp;&nbsp;<img src="Pictures/4.jpg" width="200" height="400">&nbsp;&nbsp;&nbsp;&nbsp;<img src="Pictures/5.jpg" width="200" height="400">&nbsp;&nbsp;&nbsp;&nbsp;<img src="Pictures/6.jpg" width="200" height="400">&nbsp;&nbsp;&nbsp;&nbsp;
 </p>
+
+#### Link to apk: https://drive.google.com/file/d/1pHo5fQBg_qazIzVRVPB1rDr5ghR5uLkB/view?usp=sharing
 
 ## Libraries Used
 - Provider: ChangeNotifier used to maintain and update UI state
