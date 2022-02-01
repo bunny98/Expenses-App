@@ -5,7 +5,7 @@
 A cross-platform Flutter application that helps you record your expenses and produce visualizations for easier comprehension. Following are the current features of the application:
 - Add Expense with an amount, description, Payment Mode, Category and Time
 - Edit/Delete expenses
-- Add/Edit Categories of Expenses
+- Add/Delete Categories of Expenses
 - Schedule monthly archive of all the expenses
 - Export/Import expenses data into the application
 - Bar and pie charts to visualize current month expenses
