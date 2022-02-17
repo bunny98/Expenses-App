@@ -170,17 +170,17 @@ class LocalStorage implements Storage {
     throw UnimplementedError();
   }
 
-  @override
-  Future<void> updateUpiCategory(UPICategory upiCategory) {
-    // TODO: implement updateUpiCategory
-    throw UnimplementedError();
-  }
+  // @override
+  // Future<void> updateUpiCategory(UPICategory upiCategory) {
+  //   // TODO: implement updateUpiCategory
+  //   throw UnimplementedError();
+  // }
 
-  @override
-  Future<UPICategory> getUpiCategory({required String upiId}) {
-    // TODO: implement getUpiCategory
-    throw UnimplementedError();
-  }
+  // @override
+  // Future<UPICategory> getUpiCategory({required String upiId}) {
+  //   // TODO: implement getUpiCategory
+  //   throw UnimplementedError();
+  // }
 
   @override
   Future<void> archiveAllExpenses() {
@@ -202,8 +202,7 @@ class LocalStorage implements Storage {
   }
 
   @override
-  Future<void> unArchiveExpense(
-      {required Expense expense, required Category category}) {
+  Future<void> unArchiveExpense({required Expense expense}) {
     // TODO: implement unArchiveExpense
     throw UnimplementedError();
   }

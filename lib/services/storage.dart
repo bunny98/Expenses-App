@@ -22,17 +22,16 @@ abstract class Storage {
   Future<CategoryEncapsulator> getCategoryEncapsulator();
   Future<void> importData({required BuildContext context});
   Future<void> exportData({required BuildContext context});
-  Future<UPICategory?> getUpiCategory({required String upiId});
-  Future<void> addUpiCategory(UPICategory upiCategory);
-  Future<void> updateUpiCategory(UPICategory upiCategory);
+  // Future<UPICategory?> getUpiCategory({required String upiId});
+  // Future<void> addUpiCategory(UPICategory upiCategory);
+  // Future<void> updateUpiCategory(UPICategory upiCategory);
   Future<void> archiveAllExpenses();
   Future<void> archiveExpense({required Expense expense});
   Future<List<Expense>> getAllArchivedExpensesOnDate(
       {required DateTime datetime});
   Future<List<Expense>> getAllArchivedExpensesOfCategory(
       {required Category category});
-  Future<void> unArchiveExpense(
-      {required Expense expense, required Category category});
+  Future<void> unArchiveExpense({required Expense expense});
   Future<void> saveArchiveParams({required ArchiveParams archiveParams});
   ArchiveParams? getArchiveParams();
 }

@@ -34,12 +34,13 @@ class Category {
 
   @override
   String toString() {
-    return 'Dog{id: $id, name: $name, totalExpense: $totalExpense}';
+    return 'Category{id: $id, name: $name, totalExpense: $totalExpense}';
   }
 
   String getPrimaryKeySearchCondition() => "id = \"$id\"";
   String getSearchConditionForExpense() => "categoryId = \"$id\"";
   static String getPrimaryKeyName() => "id";
+  static String getTotalExpenseName() => "totalExpense";
   static String encode(Category category) => json.encode(category.toMap());
   static Category decode(String category) =>
       Category.fromJson(json.decode(category));

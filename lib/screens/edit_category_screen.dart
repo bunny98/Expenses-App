@@ -55,7 +55,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
       type: AlertType.warning,
       title: "ALERT",
       desc:
-          "Deleting this category will also delete all the expenses of this category. Are you sure?",
+          "Deleting this category will also delete all the current/historic expenses of this category. Are you sure?",
       buttons: [
         DialogButton(
           child: const Text(

@@ -1,17 +1,11 @@
 import 'package:expense/models/archive_params.dart';
 import 'package:expense/models/category.dart';
 import 'package:expense/models/time_indexed_expense.dart';
-import 'package:expense/models/upi_category.dart';
-import 'package:expense/models/upi_payment.dart';
-import 'package:expense/services/upi_service.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
 import 'package:expense/models/payment_method_data.dart';
-import 'package:expense/services/local_storage.dart';
 import 'package:expense/services/sql_storage.dart';
 import 'package:expense/services/storage.dart';
-import 'package:expense/utils/transaction_status.dart';
-import 'package:expense/utils/upi_apps_encap.dart';
 import 'package:expense/utils/date_time_extensions.dart';
 import 'package:flutter/material.dart';
 
@@ -211,20 +205,20 @@ class ExpenseViewModel with ChangeNotifier {
     return res;
   }
 
-  Future<Category?> getCategoryForUpiId(String upiId) async {
-    UPICategory? upiCategory = await _storage.getUpiCategory(upiId: upiId);
-    return upiCategory != null
-        ? _categoryEncapsulator.getCategoryFromId(upiCategory.categoryId)
-        : null;
-  }
+  // Future<Category?> getCategoryForUpiId(String upiId) async {
+  //   UPICategory? upiCategory = await _storage.getUpiCategory(upiId: upiId);
+  //   return upiCategory != null
+  //       ? _categoryEncapsulator.getCategoryFromId(upiCategory.categoryId)
+  //       : null;
+  // }
 
-  Future<void> addUpiCategory(UPICategory upiCategory) async {
-    await _storage.addUpiCategory(upiCategory);
-  }
+  // Future<void> addUpiCategory(UPICategory upiCategory) async {
+  //   await _storage.addUpiCategory(upiCategory);
+  // }
 
-  Future<void> updateUpiCategory(UPICategory upiCategory) async {
-    await _storage.updateUpiCategory(upiCategory);
-  }
+  // Future<void> updateUpiCategory(UPICategory upiCategory) async {
+  //   await _storage.updateUpiCategory(upiCategory);
+  // }
 
   // Future<TransactionStatus> initiateUpiTransaction(
   //     {required UPIPayment upiPayment, required String expenseId}) async {
@@ -245,17 +239,18 @@ class ExpenseViewModel with ChangeNotifier {
   Future<void> unArchiveExpense({required Expense expense}) async {
     await addExpense(expense);
     await _storage.unArchiveExpense(
-        expense: expense,
-        category: _categoryEncapsulator.getCategoryFromId(expense.categoryId));
+      expense: expense,
+    );
   }
 
   Future<void> archiveAllExpenses() async {
     await _storage.archiveAllExpenses();
-    await _storage.saveArchiveParams(
-        archiveParams: ArchiveParams.fromArchiveOnEvery(
-            archiveOnEvery: _archiveParams!.archiveOnEvery,
-            previouslyAchivedOn: DateTime.now()));
+    ArchiveParams temp = ArchiveParams.fromArchiveOnEvery(
+        archiveOnEvery: _archiveParams!.archiveOnEvery,
+        previouslyAchivedOn: DateTime.now());
+    await _storage.saveArchiveParams(archiveParams: temp);
     await _appStateInit();
+    _archiveParams = temp;
     notifyListeners();
   }
 
@@ -279,5 +274,9 @@ class ExpenseViewModel with ChangeNotifier {
     List<Expense> expenses =
         await _storage.getAllExpensesOnDate(datetime: dateTime);
     return expenses;
+  }
+
+  Future<void> saveHistory() async {
+    _categoryEncapsulator.getCategoryList().forEach((element) {});
   }
 }

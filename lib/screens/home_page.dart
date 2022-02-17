@@ -4,11 +4,9 @@ import 'package:expense/screens/charts_screen.dart';
 import 'package:expense/screens/day_expense_screen.dart';
 import 'package:expense/screens/edit_category_screen.dart';
 import 'package:expense/screens/expense_grid_view_screen.dart';
-import 'package:expense/screens/qr_scanner.dart';
 import 'package:expense/utils/add_expense_screen_enum.dart';
 import 'package:expense/utils/global_func.dart';
 import 'package:expense/utils/popup_menu_item_encap.dart';
-import 'package:expense/utils/upi_apps_encap.dart';
 import 'package:expense/utils/date_time_extensions.dart';
 import 'package:expense/view_model.dart/expense_view_model.dart';
 import 'package:flutter/material.dart';
@@ -104,7 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         int.tryParse(ip) == null ||
                         int.parse(ip) <= 0 ||
                         int.parse(ip) > 30) {
-                      return "Jitna bola jae utna kro bhosdk";
+                      return "Invalid input!";
                     }
                   },
                   onSaved: (newValue) => res = int.parse(newValue!),

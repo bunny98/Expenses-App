@@ -12,7 +12,7 @@ class PaymentTypes {
     _chosenType = getDefaultPaymentType();
   }
 
-  static String getDefaultPaymentType() => "Cash";
+  static String getDefaultPaymentType() => "UPI";
 
   static String getChosenPaymentType() => _chosenType;
 
