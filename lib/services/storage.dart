@@ -1,5 +1,6 @@
 import 'package:expense/models/archive_params.dart';
 import 'package:expense/models/category.dart';
+import 'package:expense/models/metadata.dart';
 import 'package:expense/models/upi_category.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
@@ -34,4 +35,5 @@ abstract class Storage {
   Future<void> unArchiveExpense({required Expense expense});
   Future<void> saveArchiveParams({required ArchiveParams archiveParams});
   ArchiveParams? getArchiveParams();
+  Future<void> saveMetadata({required List<Metadata> metadataList});
 }

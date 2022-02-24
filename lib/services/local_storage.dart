@@ -1,5 +1,6 @@
 import 'package:expense/models/archive_params.dart';
 import 'package:expense/models/category.dart';
+import 'package:expense/models/metadata.dart';
 import 'package:expense/models/upi_category.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
@@ -44,7 +45,9 @@ class LocalStorage implements Storage {
       Set<Category> _categorySet =
           Set.from(_categoryStringSet.map((ele) => Category.decode(ele)));
       _categories = CategoryEncapsulator(
-          categories: _categorySet, defaultCategory: _categorySet.first);
+          categories: _categorySet,
+          defaultCategory: _categorySet.first,
+          metadataList: []);
     } else {
       _categories = CategoryEncapsulator.defaultValue();
       _saveCategories();
@@ -229,6 +232,12 @@ class LocalStorage implements Storage {
   @override
   Future<List<Expense>> getAllExpensesOnDate({required DateTime datetime}) {
     // TODO: implement getAllExpensesOnDate
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> saveMetadata({required List<Metadata> metadataList}) {
+    // TODO: implement saveMetadata
     throw UnimplementedError();
   }
 }

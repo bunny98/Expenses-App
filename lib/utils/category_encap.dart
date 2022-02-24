@@ -1,4 +1,9 @@
 import 'package:expense/models/category.dart';
+import 'package:expense/models/metadata.dart';
+import 'package:expense/models/metadata_types.dart';
+import 'package:expense/models/month_to_expense.dart';
+import 'package:expense/models/monthly_cat_expense.dart';
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 class CategoryEncapsulator {
@@ -6,10 +11,36 @@ class CategoryEncapsulator {
   late Category _chosenCategory;
   late Category _defaultCategory;
 
+  final List _monthsStrList = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ];
+  late List<String> _months;
+  late List<MonthlyCatExpense> _monthlyCatExpenseList;
+  late List<MonthToExpense> _totalMonthlyExpenseList;
+
   CategoryEncapsulator(
-      {required Set<Category> categories, required Category defaultCategory}) {
+      {required Set<Category> categories,
+      required Category defaultCategory,
+      required List<Metadata> metadataList}) {
     _categories = categories;
     _defaultCategory = defaultCategory;
+
+    /*
+    GRAPH DATA CALCULATION FROM METADATA
+    */
+    _buildMonthlyCatExpenseList(metadataList);
+    _buildTotalMonthlyExpense();
   }
 
   factory CategoryEncapsulator.defaultValue() {
@@ -23,7 +54,9 @@ class CategoryEncapsulator {
     _categorySet.add(Category(id: _uuid.v1(), name: "Entertainment"));
 
     return CategoryEncapsulator(
-        categories: _categorySet, defaultCategory: _categorySet.first);
+        categories: _categorySet,
+        defaultCategory: _categorySet.first,
+        metadataList: []);
   }
 
   List<Category> getCategoryList() => _categories.toList();
@@ -55,4 +88,81 @@ class CategoryEncapsulator {
 
   Category getCategoryFromId(String id) =>
       _categories.where((element) => element.id == id).first;
+
+  List<MonthlyCatExpense> getMonthlyCatExpense() => _monthlyCatExpenseList;
+  List<MonthToExpense> getTotalMonthlyExpense() => _totalMonthlyExpenseList;
+  List<String> getMonths() => _months;
+
+  List<Metadata> getCurrentMonthMetadata() {
+    int time = DateTime.now().millisecondsSinceEpoch;
+    return getCategoryList()
+        .map((e) => Metadata(
+            data: "${e.totalExpense}",
+            metadataType: MetadataType.CATEGORY_DATA,
+            time: time,
+            typeSpecificId: e.id))
+        .toList();
+  }
+
+  void _buildTotalMonthlyExpense() {
+    _totalMonthlyExpenseList = [];
+    List<int> expenses = List.filled(_months.length, 0);
+    for (var element in _monthlyCatExpenseList) {
+      List<int> exp = element.getData().map((e) => e.expense).toList();
+      for (int i = 0; i < exp.length; ++i) {
+        expenses[i] += exp[i];
+      }
+    }
+    for (int i = 0; i < expenses.length; ++i) {
+      _totalMonthlyExpenseList.add(MonthToExpense(_months[i], expenses[i]));
+    }
+  }
+
+  void _buildMonthlyCatExpenseList(List<Metadata> metadataList) {
+    debugPrint("METDATA LIST ${metadataList.length}");
+    List<int> _monthsIntList = metadataList.map((e) => e.time).toSet().toList();
+    _monthsIntList.sort();
+    _months = _monthsIntList.map((e) {
+      DateTime _time = DateTime.fromMillisecondsSinceEpoch(e);
+      return "${_monthsStrList[_time.month - 1]}'${_time.year % 100}";
+    }).toList();
+    _months.add(
+        "${_monthsStrList[DateTime.now().month - 1]}'${DateTime.now().year % 100}");
+
+    //Y-AXIS CALCULATION
+    Map<String, Map<int, int>> categoryToTimeExpense = {};
+    for (var element in metadataList) {
+      if (categoryToTimeExpense.containsKey(element.typeSpecificId)) {
+        categoryToTimeExpense[element.typeSpecificId]!
+            .putIfAbsent(element.time, () => int.parse(element.data));
+      } else {
+        categoryToTimeExpense.putIfAbsent(element.typeSpecificId,
+            () => {element.time: int.parse(element.data)});
+      }
+    }
+
+    Map<String, MonthlyCatExpense> catIdToMonthlyCatExpense = {};
+    for (var element in categoryToTimeExpense.keys) {
+      catIdToMonthlyCatExpense.putIfAbsent(
+          element,
+          () => MonthlyCatExpense(
+              categoryName: getCategoryFromId(element).name,
+              categoryId: element));
+    }
+
+    categoryToTimeExpense.forEach((key, value) {
+      for (int i = 0; i < _monthsIntList.length; ++i) {
+        catIdToMonthlyCatExpense[key]!
+            .addExpenseAmount(_months[i], value[_monthsIntList[i]]!);
+      }
+      catIdToMonthlyCatExpense[key]!
+          .addExpenseAmount(_months.last, getCategoryFromId(key).totalExpense);
+    });
+
+    _monthlyCatExpenseList = catIdToMonthlyCatExpense.values.toList();
+    //LENGTH TESTING
+    for (var element in _monthlyCatExpenseList) {
+      assert(element.getData().length == _months.length);
+    }
+  }
 }

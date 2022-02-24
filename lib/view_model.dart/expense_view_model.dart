@@ -1,5 +1,7 @@
 import 'package:expense/models/archive_params.dart';
 import 'package:expense/models/category.dart';
+import 'package:expense/models/metadata.dart';
+import 'package:expense/models/metadata_types.dart';
 import 'package:expense/models/time_indexed_expense.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/expense.dart';
@@ -39,11 +41,7 @@ class ExpenseViewModel with ChangeNotifier {
           "ARCHIVE PARAMS : ${_archiveParams!.archiveOnEvery} ${_archiveParams!.nextArchiveOn.toString()}  ${_archiveParams!.prevArchiveOn.toString()}");
       if (_archiveParams!.nextArchiveOn.isSameDate(DateTime.now()) ||
           _archiveParams!.nextArchiveOn.isBefore(DateTime.now())) {
-        await _storage.archiveAllExpenses();
-        await _storage.saveArchiveParams(
-            archiveParams: ArchiveParams.fromArchiveOnEvery(
-                archiveOnEvery: _archiveParams!.archiveOnEvery,
-                previouslyAchivedOn: DateTime.now()));
+        await archiveAllExpenses();
       }
     }
   }
@@ -231,27 +229,30 @@ class ExpenseViewModel with ChangeNotifier {
     await _storage.saveArchiveParams(archiveParams: archiveParams);
   }
 
-  Future<void> archiveExpense({required Expense expense}) async {
-    await _storage.archiveExpense(expense: expense);
-    await removeExpense(expense);
-  }
+  // Future<void> archiveExpense({required Expense expense}) async {
+  //   await _storage.archiveExpense(expense: expense);
+  //   await removeExpense(expense);
+  // }
 
-  Future<void> unArchiveExpense({required Expense expense}) async {
-    await addExpense(expense);
-    await _storage.unArchiveExpense(
-      expense: expense,
-    );
-  }
+  // Future<void> unArchiveExpense({required Expense expense}) async {
+  //   await addExpense(expense);
+  //   await _storage.unArchiveExpense(
+  //     expense: expense,
+  //   );
+  // }
 
-  Future<void> archiveAllExpenses() async {
+  Future<void> archiveAllExpenses({bool shouldInitAppState = false}) async {
+    await _saveMetadata();
     await _storage.archiveAllExpenses();
     ArchiveParams temp = ArchiveParams.fromArchiveOnEvery(
         archiveOnEvery: _archiveParams!.archiveOnEvery,
         previouslyAchivedOn: DateTime.now());
     await _storage.saveArchiveParams(archiveParams: temp);
-    await _appStateInit();
     _archiveParams = temp;
-    notifyListeners();
+    if (shouldInitAppState) {
+      await _appStateInit();
+      notifyListeners();
+    }
   }
 
   Future<List<Expense>> getAllArchivedExpensesForCategory(
@@ -276,7 +277,6 @@ class ExpenseViewModel with ChangeNotifier {
     return expenses;
   }
 
-  Future<void> saveHistory() async {
-    _categoryEncapsulator.getCategoryList().forEach((element) {});
-  }
+  Future<void> _saveMetadata() async => await _storage.saveMetadata(
+      metadataList: _categoryEncapsulator.getCurrentMonthMetadata());
 }

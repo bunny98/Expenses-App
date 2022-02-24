@@ -43,16 +43,16 @@ class _DayExpenseScreenState extends State<DayExpenseScreen> {
       children: !dayExp.isArchived
           ? [
               // A SlidableAction can have an icon and/or a label.
-              SlidableAction(
-                onPressed: (_) async {
-                  await context
-                      .read<ExpenseViewModel>()
-                      .archiveExpense(expense: dayExp.expense);
-                },
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                icon: Icons.archive,
-              ),
+              // SlidableAction(
+              //   onPressed: (_) async {
+              //     await context
+              //         .read<ExpenseViewModel>()
+              //         .archiveExpense(expense: dayExp.expense);
+              //   },
+              //   backgroundColor: Colors.black,
+              //   foregroundColor: Colors.white,
+              //   icon: Icons.archive,
+              // ),
 
               SlidableAction(
                 onPressed: (_) {

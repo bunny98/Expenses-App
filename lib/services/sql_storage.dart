@@ -1,10 +1,12 @@
 import 'package:expense/models/archive_params.dart';
 import 'package:expense/models/category.dart';
-import 'package:expense/models/category_history.dart';
+import 'package:expense/models/metadata.dart';
 import 'package:expense/models/expense.dart';
+import 'package:expense/models/metadata_types.dart';
 import 'package:expense/models/sql_tables/archived_table.dart';
 import 'package:expense/models/sql_tables/category_table.dart';
 import 'package:expense/models/sql_tables/expenses_table.dart';
+import 'package:expense/models/sql_tables/metadata_table.dart';
 import 'package:expense/models/upi_category.dart';
 import 'package:expense/utils/category_encap.dart';
 import 'package:expense/models/sql_table_names.dart';
@@ -22,31 +24,36 @@ class SQLStorage implements Storage {
   late ExpensesTable _expensesTable;
   late CategoryTable _categoryTable;
   late ArchivedTable _archivedTable;
+  late MetadataTable _metadataTable;
 
   @override
   Future<void> init({int daysToKeepRecord = -1}) async {
     Database db = await openDatabase(
       join(await getDatabasesPath(), 'expenses_database.db'),
       onCreate: (db, version) async {
-        _expensesTable = ExpensesTable(db);
-        _categoryTable = CategoryTable(db);
-        _archivedTable = ArchivedTable(db);
+        _instatiateTables(db);
 
         await _categoryTable.create(prepopulate: true);
         await _expensesTable.create();
         await _archivedTable.create();
+        await _metadataTable.create();
         // await createUpiCategoryTable(db: db);
       },
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
       version: 1,
     );
     dbInstance = db;
-    _expensesTable = ExpensesTable(db);
-    _categoryTable = CategoryTable(db);
-    _archivedTable = ArchivedTable(db);
+    _instatiateTables(dbInstance);
 
     _prefs = await SharedPreferences.getInstance();
     _importExportService = ImportExportService(db: dbInstance);
+  }
+
+  void _instatiateTables(Database db) {
+    _expensesTable = ExpensesTable(db);
+    _categoryTable = CategoryTable(db);
+    _archivedTable = ArchivedTable(db);
+    _metadataTable = MetadataTable(db);
   }
 
   Future<bool> tableExists({required String tableName}) async {
@@ -55,20 +62,11 @@ class SQLStorage implements Storage {
     return res.isNotEmpty;
   }
 
-  Future<void> createExpensesTable({required Database db}) async =>
-      await _expensesTable.create();
-
-  Future<void> createCategoryTable({required bool shouldInit}) async =>
-      await _categoryTable.create(prepopulate: shouldInit);
-
   // Future<void> createUpiCategoryTable({required Database db}) async {
   //   debugPrint("EXECUTING CREATE UPI CAT TABLE");
   //   await db.execute(
   //       "CREATE TABLE ${SQLTableNames.UPI_CATEGORY_TABLE} ${UPICategory.getSQLCreateDatatypes()}");
   // }
-
-  Future<void> createArchivedTable({required Database db}) async =>
-      await _archivedTable.create();
 
   // Future<void> createHistoryTable({required Database db}) async {
   //   debugPrint("EXECUTING CREATE HISTORY CATEGORY TABLE");
@@ -142,12 +140,22 @@ class SQLStorage implements Storage {
   }
 
   @override
-  Future<CategoryEncapsulator> getCategoryEncapsulator() async =>
-      await _categoryTable.getCategoryEncapsulator();
+  Future<CategoryEncapsulator> getCategoryEncapsulator() async {
+    Set<Category> categorySet = await _categoryTable.getAll();
+    List<Metadata> metadataList =
+        await _metadataTable.getAll(MetadataType.CATEGORY_DATA);
+    return CategoryEncapsulator(
+        categories: categorySet,
+        defaultCategory: categorySet.first,
+        metadataList: metadataList);
+  }
 
   @override
-  Future<void> removeCategory(Category category) async =>
-      await _categoryTable.remove(category);
+  Future<void> removeCategory(Category category) async {
+    await _categoryTable.remove(category);
+    await _metadataTable.removeMetadataOfTypeAndTypeId(
+        type: MetadataType.CATEGORY_DATA, typeId: category.id);
+  }
 
   @override
   Future<void> exportData({required BuildContext context}) async =>
@@ -231,4 +239,8 @@ class SQLStorage implements Storage {
   Future<List<Expense>> getAllExpensesOnDate(
           {required DateTime datetime}) async =>
       await _expensesTable.getAllExpensesOnDate(datetime);
+
+  @override
+  Future<void> saveMetadata({required List<Metadata> metadataList}) async =>
+      await _metadataTable.saveAll(metadataList);
 }

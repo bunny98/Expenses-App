@@ -106,25 +106,25 @@ class _CategoryExpenseListState extends State<CategoryExpenseList> {
       motion: const ScrollMotion(),
       children: [
         // A SlidableAction can have an icon and/or a label.
-        SlidableAction(
-          onPressed: (_) async {
-            if (widget.categoryExpenseState ==
-                CategoryExpenseState.UNARCHIVED) {
-              await context
-                  .read<ExpenseViewModel>()
-                  .archiveExpense(expense: expense);
-            } else {
-              await context
-                  .read<ExpenseViewModel>()
-                  .unArchiveExpense(expense: expense);
-            }
-          },
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          icon: widget.categoryExpenseState == CategoryExpenseState.UNARCHIVED
-              ? Icons.archive
-              : Icons.unarchive,
-        ),
+        // SlidableAction(
+        //   onPressed: (_) async {
+        //     if (widget.categoryExpenseState ==
+        //         CategoryExpenseState.UNARCHIVED) {
+        //       await context
+        //           .read<ExpenseViewModel>()
+        //           .archiveExpense(expense: expense);
+        //     } else {
+        //       await context
+        //           .read<ExpenseViewModel>()
+        //           .unArchiveExpense(expense: expense);
+        //     }
+        //   },
+        //   backgroundColor: Colors.black,
+        //   foregroundColor: Colors.white,
+        //   icon: widget.categoryExpenseState == CategoryExpenseState.UNARCHIVED
+        //       ? Icons.archive
+        //       : Icons.unarchive,
+        // ),
         if (widget.categoryExpenseState == CategoryExpenseState.UNARCHIVED)
           SlidableAction(
             onPressed: (_) {

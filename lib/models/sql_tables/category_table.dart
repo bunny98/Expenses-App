@@ -43,13 +43,7 @@ class CategoryTable extends ITable {
         .execute("UPDATE $tableName SET ${Category.getTotalExpenseName()}=0");
   }
 
-  Future<CategoryEncapsulator> getCategoryEncapsulator() async {
-    List<Map<String, dynamic>> res = await db.query(tableName);
-    Set<Category> _categories = {};
-    for (var item in res) {
-      _categories.add(Category.fromJson(item));
-    }
-    return CategoryEncapsulator(
-        categories: _categories, defaultCategory: _categories.first);
+  Future<Set<Category>> getAll() async {
+    return (await db.query(tableName)).map((e) => Category.fromJson(e)).toSet();
   }
 }

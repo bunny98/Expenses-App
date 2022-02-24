@@ -5,6 +5,7 @@ import 'package:expense/screens/day_expense_screen.dart';
 import 'package:expense/screens/edit_category_screen.dart';
 import 'package:expense/screens/expense_grid_view_screen.dart';
 import 'package:expense/utils/add_expense_screen_enum.dart';
+import 'package:expense/utils/category_encap.dart';
 import 'package:expense/utils/global_func.dart';
 import 'package:expense/utils/popup_menu_item_encap.dart';
 import 'package:expense/utils/date_time_extensions.dart';
@@ -73,13 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
     ];
   }
 
-  Future<void> _onArchiveAllExpenses() async {
-    if (await showConfirmActionDialog(
-        context: context,
-        msg: "This will archive all your current expenses. Are you sure?")) {
-      await context.read<ExpenseViewModel>().archiveAllExpenses();
-    }
-  }
+  Future<void> _onSyncWithMessages() async {}
 
   Future<void> _onScheduleArchive() async {
     GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -134,8 +129,14 @@ class _MyHomePageState extends State<MyHomePage> {
       await context.read<ExpenseViewModel>().scheduleArchive(
           archiveParams:
               ArchiveParams.fromArchiveOnEvery(archiveOnEvery: res!));
-      if (DateTime.now().isToday(res!)) {
-        await _onArchiveAllExpenses();
+      if (DateTime.now().isToday(res!) &&
+          await showConfirmActionDialog(
+              context: context,
+              msg:
+                  "Today is your scheduled archive date. Do you want to archive all the expenses now?")) {
+        await context
+            .read<ExpenseViewModel>()
+            .archiveAllExpenses(shouldInitAppState: true);
       }
     }
   }
@@ -252,9 +253,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                       side: const BorderSide(
                                           color: Colors.white))))),
                       ElevatedButton(
-                        onPressed: _onArchiveAllExpenses,
+                        onPressed: _onSyncWithMessages,
                         child: const Icon(
-                          Icons.archive_outlined,
+                          Icons.sync_rounded,
                           color: Colors.black,
                         ),
                         style: ButtonStyle(
