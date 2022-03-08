@@ -16,6 +16,7 @@ abstract class Storage {
       required Expense newExpense,
       required Category oldCategory,
       required Category newCategory});
+  Future<Expense?> getLatestExpense();
   Future<void> addCategory(Category category);
   Future<void> removeCategory(Category category);
   Future<List<Expense>> getAllExpenses();

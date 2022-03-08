@@ -14,10 +14,18 @@ import 'package:sqflite_common_porter/sqflite_porter.dart';
 class ImportExportService {
   final Database db;
   final Directory? rootPath = Directory("/storage/emulated/0/");
+  final List<String> tableNamesInOrderOfImportExecution;
+  late Map<String, List<String>> _tableToCommandsMap;
 
   ImportExportService({
     required this.db,
-  });
+    required this.tableNamesInOrderOfImportExecution,
+  }) {
+    _tableToCommandsMap = {};
+    for (var element in tableNamesInOrderOfImportExecution) {
+      _tableToCommandsMap.putIfAbsent(element, () => []);
+    }
+  }
 
   // Future<Directory> getRootDir() async {
   //   final String externalDirectory =
@@ -91,11 +99,22 @@ class ImportExportService {
             }
           }
 
-          var currentCommands = await getCurrentInsertCommands();
-          commandsToExecute.addAll(currentCommands);
+          // var currentCommands = await getCurrentInsertCommands();
+          // commandsToExecute.addAll(currentCommands);
+          for (var element in commandsToExecute) {
+            String commandTableName = element.split(" ")[2];
+            if (_tableToCommandsMap.containsKey(commandTableName)) {
+              _tableToCommandsMap[commandTableName]!.add(element);
+            }
+          }
+
           if (commandsToExecute.isNotEmpty) {
             await clearStorage(shouldInitCategory: false);
-            await dbImportSql(db, commandsToExecute);
+            for (var element in tableNamesInOrderOfImportExecution) {
+              if (_tableToCommandsMap.containsKey(element)) {
+                await dbImportSql(db, _tableToCommandsMap[element]!);
+              }
+            }
             showToast("Imported!");
           }
         } catch (e) {

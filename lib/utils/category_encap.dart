@@ -93,8 +93,7 @@ class CategoryEncapsulator {
   List<MonthToExpense> getTotalMonthlyExpense() => _totalMonthlyExpenseList;
   List<String> getMonths() => _months;
 
-  List<Metadata> getCurrentMonthMetadata() {
-    int time = DateTime.now().millisecondsSinceEpoch;
+  List<Metadata> getLatestMetadata(int time) {
     return getCategoryList()
         .map((e) => Metadata(
             data: "${e.totalExpense}",
@@ -119,15 +118,15 @@ class CategoryEncapsulator {
   }
 
   void _buildMonthlyCatExpenseList(List<Metadata> metadataList) {
-    debugPrint("METDATA LIST ${metadataList.length}");
+    debugPrint("METADATA LIST LEN ${metadataList.length}");
+    DateTime _now = DateTime.now();
     List<int> _monthsIntList = metadataList.map((e) => e.time).toSet().toList();
+    _monthsIntList.add(_now.millisecondsSinceEpoch);
     _monthsIntList.sort();
     _months = _monthsIntList.map((e) {
       DateTime _time = DateTime.fromMillisecondsSinceEpoch(e);
-      return "${_monthsStrList[_time.month - 1]}'${_time.year % 100}";
+      return getMonthStr(_time);
     }).toList();
-    _months.add(
-        "${_monthsStrList[DateTime.now().month - 1]}'${DateTime.now().year % 100}");
 
     //Y-AXIS CALCULATION
     Map<String, Map<int, int>> categoryToTimeExpense = {};
@@ -140,6 +139,16 @@ class CategoryEncapsulator {
             () => {element.time: int.parse(element.data)});
       }
     }
+
+    getCategoryList().forEach((element) {
+      if (categoryToTimeExpense.containsKey(element.id)) {
+        categoryToTimeExpense[element.id]!
+            .putIfAbsent(_monthsIntList.last, () => element.totalExpense);
+      } else {
+        categoryToTimeExpense.putIfAbsent(
+            element.id, () => {_monthsIntList.last: element.totalExpense});
+      }
+    });
 
     Map<String, MonthlyCatExpense> catIdToMonthlyCatExpense = {};
     for (var element in categoryToTimeExpense.keys) {
@@ -155,8 +164,6 @@ class CategoryEncapsulator {
         catIdToMonthlyCatExpense[key]!
             .addExpenseAmount(_months[i], value[_monthsIntList[i]]!);
       }
-      catIdToMonthlyCatExpense[key]!
-          .addExpenseAmount(_months.last, getCategoryFromId(key).totalExpense);
     });
 
     _monthlyCatExpenseList = catIdToMonthlyCatExpense.values.toList();
@@ -164,5 +171,9 @@ class CategoryEncapsulator {
     for (var element in _monthlyCatExpenseList) {
       assert(element.getData().length == _months.length);
     }
+  }
+
+  String getMonthStr(DateTime dateTime) {
+    return "${_monthsStrList[dateTime.month - 1]}'${dateTime.year % 100}";
   }
 }

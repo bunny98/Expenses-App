@@ -40,6 +40,7 @@ class Expense {
       };
 
   String getPrimaryKeySearchCondition() => "id = \"$id\"";
+  static getTimeAttributeName() => "time";
   static String encode(Expense expense) => json.encode(expense.toMap());
   static Expense decode(String expense) =>
       Expense.fromJson(json.decode(expense));

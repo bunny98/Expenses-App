@@ -240,4 +240,10 @@ class LocalStorage implements Storage {
     // TODO: implement saveMetadata
     throw UnimplementedError();
   }
+
+  @override
+  Future<Expense?> getLatestExpense() {
+    // TODO: implement getLatestExpense
+    throw UnimplementedError();
+  }
 }

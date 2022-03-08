@@ -49,4 +49,15 @@ class ExpensesTable extends ITable {
     }
     return expenses;
   }
+
+  Future<Expense?> getLatest() async {
+    Expense? ret;
+    var res = await db.query(tableName,
+        where:
+            "${Expense.getTimeAttributeName()} = (SELECT MAX(${Expense.getTimeAttributeName()}) FROM $tableName)");
+    for (var element in res) {
+      ret = Expense.fromJson(element);
+    }
+    return ret;
+  }
 }

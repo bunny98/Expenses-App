@@ -11,7 +11,7 @@ class CategoryTable extends ITable {
 
   @override
   Future<void> create({bool prepopulate = false}) async {
-    debugPrint("EXECUTING CREATE CAT");
+    debugPrint("EXECUTING CREATE CAT $prepopulate");
     await db.execute(
         "CREATE TABLE ${SQLTableNames.CATEGORY_TABLE} ${Category.getSQLCreateDatatypes()}");
     if (prepopulate) {

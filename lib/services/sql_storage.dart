@@ -25,6 +25,7 @@ class SQLStorage implements Storage {
   late CategoryTable _categoryTable;
   late ArchivedTable _archivedTable;
   late MetadataTable _metadataTable;
+  late List<String> _tableNamesInOrderOfImportExecution;
 
   @override
   Future<void> init({int daysToKeepRecord = -1}) async {
@@ -46,7 +47,10 @@ class SQLStorage implements Storage {
     _instatiateTables(dbInstance);
 
     _prefs = await SharedPreferences.getInstance();
-    _importExportService = ImportExportService(db: dbInstance);
+    _importExportService = ImportExportService(
+        db: dbInstance,
+        tableNamesInOrderOfImportExecution:
+            _tableNamesInOrderOfImportExecution);
   }
 
   void _instatiateTables(Database db) {
@@ -54,6 +58,12 @@ class SQLStorage implements Storage {
     _categoryTable = CategoryTable(db);
     _archivedTable = ArchivedTable(db);
     _metadataTable = MetadataTable(db);
+    _tableNamesInOrderOfImportExecution = [
+      _categoryTable.tableName,
+      _expensesTable.tableName,
+      _archivedTable.tableName,
+      _metadataTable.tableName
+    ];
   }
 
   Future<bool> tableExists({required String tableName}) async {
@@ -94,12 +104,14 @@ class SQLStorage implements Storage {
     await _expensesTable.dropTable();
     await _categoryTable.dropTable();
     await _archivedTable.dropTable();
+    await _metadataTable.dropTable();
     // await dbInstance.execute(
     //   'DROP TABLE ${SQLTableNames.UPI_CATEGORY_TABLE}',
     // );
     await _categoryTable.create(prepopulate: shouldInitCategory);
     await _expensesTable.create();
     await _archivedTable.create();
+    await _metadataTable.create();
     // await createUpiCategoryTable(db: dbInstance);
   }
 
@@ -127,6 +139,9 @@ class SQLStorage implements Storage {
         category: Category.increaseAmountBy(newCategory, newExpense.amount),
         where: newCategory.getPrimaryKeySearchCondition());
   }
+
+  @override
+  Future<Expense?> getLatestExpense() async => await _expensesTable.getLatest();
 
   @override
   Future<List<Expense>> getAllExpenses() async => await _expensesTable.getAll();

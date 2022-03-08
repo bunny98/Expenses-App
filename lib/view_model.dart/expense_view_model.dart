@@ -242,6 +242,7 @@ class ExpenseViewModel with ChangeNotifier {
   // }
 
   Future<void> archiveAllExpenses({bool shouldInitAppState = false}) async {
+    debugPrint("ARCHIVING ALL EXPENSES");
     await _saveMetadata();
     await _storage.archiveAllExpenses();
     ArchiveParams temp = ArchiveParams.fromArchiveOnEvery(
@@ -277,6 +278,26 @@ class ExpenseViewModel with ChangeNotifier {
     return expenses;
   }
 
-  Future<void> _saveMetadata() async => await _storage.saveMetadata(
-      metadataList: _categoryEncapsulator.getCurrentMonthMetadata());
+  Future<void> _saveMetadata() async {
+    Expense? exp = await _storage.getLatestExpense();
+    if (exp != null) {
+      await _storage.saveMetadata(
+          metadataList: _categoryEncapsulator
+              .getLatestMetadata(exp.time.millisecondsSinceEpoch));
+    }
+  }
+
+  Future<void> _saveData() async {
+    DateTime now = DateTime.now();
+    int time = DateTime(now.year, now.month - 1, 28).millisecondsSinceEpoch;
+    await _storage.saveMetadata(
+        metadataList: _categoryEncapsulator
+            .getCategoryList()
+            .map((e) => Metadata(
+                data: "${e.totalExpense}",
+                metadataType: MetadataType.CATEGORY_DATA,
+                time: time,
+                typeSpecificId: e.id))
+            .toList());
+  }
 }

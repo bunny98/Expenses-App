@@ -74,7 +74,9 @@ class _MyHomePageState extends State<MyHomePage> {
     ];
   }
 
-  Future<void> _onSyncWithMessages() async {}
+  Future<void> _onSyncWithMessages() async {
+    showToast("Under Development...");
+  }
 
   Future<void> _onScheduleArchive() async {
     GlobalKey<FormState> _formKey = GlobalKey<FormState>();

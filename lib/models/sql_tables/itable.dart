@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 
 abstract class ITable {
@@ -7,6 +8,7 @@ abstract class ITable {
 
   Future<void> create({bool prepopulate = false});
   Future<void> dropTable() async {
+    debugPrint("DROPPING TABLE $tableName");
     await db.execute(
       'DROP TABLE $tableName',
     );
